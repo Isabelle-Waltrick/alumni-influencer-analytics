@@ -66,12 +66,23 @@ router.post(
       .normalizeEmail()
       .custom((value) => {
         // CW1: "Email-based registration (university domain required)".
-        // Domain is overridable via env so tests / staging can use a different one.
-        const allowed = (process.env.ALLOWED_EMAIL_DOMAIN || 'westminster.ac.uk').toLowerCase();
-        if (!value.toLowerCase().endsWith('@' + allowed)) {
+        // Domains are overridable via env so tests / staging can use different ones.
+        // Prefer ALLOWED_EMAIL_DOMAINS (comma-separated); fall back to ALLOWED_EMAIL_DOMAIN.
+        const configuredDomains = (
+          process.env.ALLOWED_EMAIL_DOMAINS
+          || process.env.ALLOWED_EMAIL_DOMAIN
+          || 'westminster.ac.uk,my.westminster.ac.uk'
+        )
+          .toLowerCase()
+          .split(',')
+          .map((d) => d.trim())
+          .filter(Boolean);
+
+        const isAllowed = configuredDomains.some((domain) => value.toLowerCase().endsWith('@' + domain));
+        if (!isAllowed) {
           throw new Error(
             `Only University of Westminster email addresses are allowed. ` +
-            `Please register with your @${allowed} email.`
+            `Please register with one of: ${configuredDomains.map((d) => '@' + d).join(', ')}.`
           );
         }
         return true;
