@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+body {
+  @apply bg-slate-50 text-slate-800;
+  font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+#app {
+  @apply min-h-screen;
+}
+
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}

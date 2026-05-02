@@ -1,0 +1,160 @@
+<%- include('../partials/head', { title: 'Bidding' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="container pb-5" style="max-width:720px">
+
+  <!-- Monthly limit banner -->
+  <div class="card section-card p-4 d-flex flex-row justify-content-between align-items-center">
+    <div>
+      <span class="fw-semibold">Monthly slots used </span>
+      <span id="limitUsed">—</span> / <span id="limitTotal">—</span>
+    </div>
+    <span id="limitBadge" class="badge bg-secondary">Loading...</span>
+  </div>
+
+  <!-- Current window info -->
+  <div class="card section-card p-4" id="windowCard">
+    <h5 class="fw-bold mb-3">Today's Bidding Window</h5>
+    <div id="windowInfo">
+      <p class="text-muted">Loading window info...</p>
+    </div>
+  </div>
+
+  <!-- Bid status -->
+  <div class="card section-card p-4" id="statusCard" style="display:none!important">
+    <h5 class="fw-bold mb-2">Your Bid Status</h5>
+    <div id="statusDisplay"></div>
+  </div>
+
+  <!-- Place / update bid -->
+  <div class="card section-card p-4" id="bidFormCard">
+    <h5 class="fw-bold mb-3" id="bidFormTitle">Place a Bid</h5>
+    <form id="bidForm">
+      <div class="input-group">
+        <span class="input-group-text">£</span>
+        <input type="number" class="form-control" id="bidAmount" placeholder="Enter your bid" min="1" step="0.01" />
+        <button class="btn btn-dark" type="submit" id="bidSubmitBtn">Place bid</button>
+      </div>
+      <div class="form-text mt-1">You cannot see the highest bid — this keeps it fair for everyone.</div>
+    </form>
+    <button class="btn btn-outline-danger mt-3 d-none" id="cancelBidBtn">Cancel my bid</button>
+  </div>
+
+  <!-- Bid history -->
+  <div class="card section-card p-4">
+    <h5 class="fw-bold mb-3">Bid History</h5>
+    <div id="historyList"><p class="text-muted small">Loading...</p></div>
+  </div>
+
+</div>
+
+<script>
+let activeBidId = null;
+
+async function loadAll() {
+  await Promise.all([loadLimit(), loadWindow(), loadHistory()]);
+}
+
+// ─── Monthly limit ─────────────────────────────────────────────────────────────
+async function loadLimit() {
+  const data = await api.get('/api/bids/monthly-limit');
+  if (data.message) return; // profile not found
+  document.getElementById('limitUsed').textContent = data.used;
+  document.getElementById('limitTotal').textContent = data.limit;
+  const badge = document.getElementById('limitBadge');
+  const remaining = data.remaining;
+  badge.textContent = remaining > 0 ? `${remaining} slot${remaining !== 1 ? 's' : ''} remaining` : 'Limit reached';
+  badge.className = `badge ${remaining > 0 ? 'bg-success' : 'bg-danger'}`;
+}
+
+// ─── Window info & bid status ──────────────────────────────────────────────────
+async function loadWindow() {
+  const windowData = await api.get('/api/bids/window');
+  const statusData = await api.get('/api/bids/status');
+  const infoEl = document.getElementById('windowInfo');
+
+  if (windowData.status === 'open') {
+    infoEl.innerHTML = `
+      <p class="mb-1"><strong>Bidding date:</strong> ${windowData.biddingDate}</p>
+      <p class="mb-1"><strong>Featured date:</strong> ${windowData.featuredDate}</p>
+      <p class="mb-0"><strong>Active bids:</strong> ${windowData.totalActiveBids}</p>`;
+  } else {
+    infoEl.innerHTML = `<p class="text-warning mb-0">${windowData.message || 'Bidding is closed for today. Opens again tomorrow.'}</p>`;
+    document.getElementById('bidFormCard').style.display = 'none';
+    return;
+  }
+
+  // show status
+  if (statusData.hasActiveBid) {
+    const statusCard = document.getElementById('statusCard');
+    statusCard.style.removeProperty('display');
+    document.getElementById('statusDisplay').innerHTML = statusData.isWinning
+      ? `<span class="badge bg-success fs-6">🏆 Currently Winning</span>`
+      : `<span class="badge bg-secondary fs-6">Not currently winning — consider increasing your bid.</span>`;
+
+    // switch form to update mode
+    activeBidId = statusData.bidId || null;
+    document.getElementById('bidFormTitle').textContent = 'Update Your Bid';
+    document.getElementById('bidSubmitBtn').textContent = 'Increase bid';
+    document.getElementById('cancelBidBtn').classList.remove('d-none');
+  }
+}
+
+// ─── Place or increase bid ─────────────────────────────────────────────────────
+document.getElementById('bidForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('bidAmount').value);
+  if (!amount || amount < 1) { toast('Enter a valid amount.', 'warning'); return; }
+
+  let res;
+  if (activeBidId) {
+    res = await api.patch(`/api/bids/${activeBidId}`, { amount });
+  } else {
+    res = await api.post('/api/bids', { amount });
+  }
+
+  if (res.status === 200 || res.status === 201) {
+    toast(res.data.message);
+    document.getElementById('bidAmount').value = '';
+    loadAll();
+  } else {
+    toast(res.data.message || 'Bid failed.', 'danger');
+  }
+});
+
+// ─── Cancel bid ────────────────────────────────────────────────────────────────
+document.getElementById('cancelBidBtn').addEventListener('click', async () => {
+  if (!activeBidId) return;
+  const { status, data } = await api.del(`/api/bids/${activeBidId}`);
+  if (status === 200) {
+    toast(data.message);
+    activeBidId = null;
+    loadAll();
+  } else {
+    toast(data.message || 'Could not cancel.', 'danger');
+  }
+});
+
+// ─── Bid history ───────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const bids = await api.get('/api/bids/history');
+  const el = document.getElementById('historyList');
+  if (!Array.isArray(bids) || bids.length === 0) {
+    el.innerHTML = '<p class="text-muted small">No bids placed yet.</p>';
+    return;
+  }
+  el.innerHTML = bids.map(b => `
+    <div class="d-flex justify-content-between border rounded p-2 mb-2 small">
+      <div>
+        <strong>£${b.amount}</strong> —
+        ${b.bidWindowId?.date || ''}
+        ${b.isWinner ? '<span class="badge bg-success ms-1">Won</span>' : ''}
+        ${!b.isActive ? '<span class="badge bg-secondary ms-1">Cancelled</span>' : ''}
+      </div>
+      <span class="text-muted">${new Date(b.createdAt).toLocaleDateString()}</span>
+    </div>`).join('');
+}
+
+loadAll();
+</script>
+<%- include('../partials/foot') %>

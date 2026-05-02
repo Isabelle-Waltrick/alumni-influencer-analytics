@@ -1,0 +1,282 @@
+<%- include('../partials/head', { title: 'API Keys' }) %>
+<%- include('../partials/navbar') %>
+
+<div class="container pb-5" style="max-width:800px">
+
+  <!-- Generate new key -->
+  <div class="card section-card p-4">
+    <h5 class="fw-bold mb-3">Generate API Key</h5>
+    <p class="text-muted small mb-3">
+      Choose scopes to match the client app. The University Analytics Dashboard needs
+      <code>read:alumni</code> + <code>read:analytics</code>; the Mobile AR App needs
+      only <code>read:alumni_of_day</code>.
+    </p>
+
+    <!-- Quick presets — fill in client name + scope checkboxes in one click -->
+    <div class="mb-3">
+      <span class="form-label small fw-semibold d-block">Quick presets</span>
+      <button type="button" class="btn btn-sm btn-outline-dark me-2" data-preset="analytics">
+        Analytics Dashboard
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-dark" data-preset="ar">
+        Mobile AR App
+      </button>
+    </div>
+
+    <form id="genForm" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Key label</label>
+        <input class="form-control" id="keyLabel" placeholder="e.g. Analytics Dashboard - Production" maxlength="60" />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Client name</label>
+        <input class="form-control" id="clientName" placeholder="e.g. analytics-dashboard" maxlength="40" />
+        <div class="form-text">Identifies which app uses this key (shown in usage stats).</div>
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Scopes</label>
+        <div class="row g-2">
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input scope-cb" type="checkbox" value="read:alumni" id="scope-alumni" />
+              <label class="form-check-label small" for="scope-alumni">
+                <code>read:alumni</code><br/>
+                <span class="text-muted">List alumni profiles</span>
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input scope-cb" type="checkbox" value="read:analytics" id="scope-analytics" />
+              <label class="form-check-label small" for="scope-analytics">
+                <code>read:analytics</code><br/>
+                <span class="text-muted">Charts, summary, filters</span>
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input scope-cb" type="checkbox" value="read:donations" id="scope-donations" />
+              <label class="form-check-label small" for="scope-donations">
+                <code>read:donations</code><br/>
+                <span class="text-muted">Sponsorship summary</span>
+              </label>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-check">
+              <input class="form-check-input scope-cb" type="checkbox" value="read:alumni_of_day" id="scope-aod" />
+              <label class="form-check-label small" for="scope-aod">
+                <code>read:alumni_of_day</code><br/>
+                <span class="text-muted">Today's featured alumnus (AR app)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12">
+        <button class="btn btn-dark" type="submit">Generate key</button>
+      </div>
+    </form>
+
+    <!-- Revealed once after generation -->
+    <div id="newKeyAlert" class="alert alert-success mt-3 d-none">
+      <p class="fw-semibold mb-1">Copy your API key now — it will not be shown again.</p>
+      <div class="input-group">
+        <input type="text" class="form-control font-monospace" id="newKeyValue" readonly />
+        <button class="btn btn-outline-secondary" id="copyBtn" type="button">Copy</button>
+      </div>
+      <p class="small text-muted mt-2 mb-0" id="newKeyMeta"></p>
+    </div>
+  </div>
+
+  <!-- Existing keys -->
+  <div class="card section-card p-4">
+    <h5 class="fw-bold mb-3">Your API Keys</h5>
+    <div id="keysList"><p class="text-muted small">Loading...</p></div>
+  </div>
+
+  <!-- Usage stats -->
+  <div class="card section-card p-4">
+    <h5 class="fw-bold mb-3">Usage Statistics</h5>
+    <h6 class="text-muted small mb-2">Per-key totals</h6>
+    <div id="statsKeys" class="mb-4"></div>
+    <h6 class="text-muted small mb-2">Endpoint breakdown</h6>
+    <div id="statsEndpoints"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── Quick presets ─────────────────────────────────────────────────────────────
+// Map the two CW2 client platforms onto label/clientName/scope combinations so
+// the user can pick the right setup with one click.
+const PRESETS = {
+  analytics: {
+    label: 'Analytics Dashboard',
+    clientName: 'analytics-dashboard',
+    scopes: ['read:alumni', 'read:analytics'],
+  },
+  ar: {
+    label: 'Mobile AR App',
+    clientName: 'mobile-ar',
+    scopes: ['read:alumni_of_day'],
+  },
+};
+
+document.querySelectorAll('[data-preset]').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const preset = PRESETS[btn.dataset.preset];
+    if (!preset) return;
+    document.getElementById('keyLabel').value = preset.label;
+    document.getElementById('clientName').value = preset.clientName;
+    document.querySelectorAll('.scope-cb').forEach((cb) => {
+      cb.checked = preset.scopes.includes(cb.value);
+    });
+  });
+});
+
+// ─── Generate key ──────────────────────────────────────────────────────────────
+document.getElementById('genForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const label = document.getElementById('keyLabel').value.trim();
+  const clientName = document.getElementById('clientName').value.trim();
+  const scopes = Array.from(document.querySelectorAll('.scope-cb:checked')).map((cb) => cb.value);
+
+  if (scopes.length === 0) {
+    toast('Pick at least one scope — the key needs to permit at least one endpoint.', 'danger');
+    return;
+  }
+
+  const body = { scopes };
+  if (label) body.label = label;
+  if (clientName) body.clientName = clientName;
+
+  const { status, data } = await api.post('/api/developer/keys', body);
+
+  if (status === 201) {
+    const alertEl = document.getElementById('newKeyAlert');
+    document.getElementById('newKeyValue').value = data.key;
+    document.getElementById('newKeyMeta').textContent =
+      `Client: ${data.clientName || '(none)'} — Scopes: ${(data.scopes || []).join(', ')}`;
+    alertEl.classList.remove('d-none');
+
+    // Reset only the inputs, keep scopes ticked so the user can quickly
+    // generate another key with the same setup if they need to.
+    document.getElementById('keyLabel').value = '';
+    document.getElementById('clientName').value = '';
+    loadKeys();
+    loadStats();
+  } else {
+    toast(data.errors?.[0]?.msg || data.message || 'Failed to generate key.', 'danger');
+  }
+});
+
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const val = document.getElementById('newKeyValue').value;
+  navigator.clipboard.writeText(val).then(() => toast('Copied to clipboard.'));
+});
+
+// ─── Load keys ─────────────────────────────────────────────────────────────────
+async function loadKeys() {
+  const keys = await api.get('/api/developer/keys');
+  const el = document.getElementById('keysList');
+
+  if (!Array.isArray(keys) || keys.length === 0) {
+    el.innerHTML = '<p class="text-muted small">No keys yet.</p>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle">
+        <thead><tr>
+          <th>Prefix</th><th>Label</th><th>Client</th><th>Scopes</th>
+          <th>Status</th><th>Last used</th><th>Created</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${keys.map(k => `
+            <tr class="${k.isRevoked ? 'text-muted' : ''}">
+              <td class="font-monospace small">${k.keyPrefix}</td>
+              <td>${k.label || ''}</td>
+              <td><span class="badge bg-secondary">${k.clientName || 'custom-client'}</span></td>
+              <td class="small">${(k.scopes || []).map(s => `<code>${s}</code>`).join(' ') || '—'}</td>
+              <td>${k.isRevoked
+                ? '<span class="badge bg-danger">Revoked</span>'
+                : '<span class="badge bg-success">Active</span>'}</td>
+              <td class="small">${k.lastUsedAt ? new Date(k.lastUsedAt).toLocaleString() : 'Never'}</td>
+              <td class="small">${new Date(k.createdAt).toLocaleDateString()}</td>
+              <td>
+                ${!k.isRevoked ? `<button class="btn btn-sm btn-outline-danger"
+                  onclick="revokeKey('${k._id}')">Revoke</button>` : ''}
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ─── Revoke key ────────────────────────────────────────────────────────────────
+async function revokeKey(id) {
+  if (!confirm('Revoke this key? Any app using it will stop working immediately.')) return;
+  const { status, data } = await api.del(`/api/developer/keys/${id}`);
+  if (status === 200) {
+    toast(data.message);
+    loadKeys();
+    loadStats();
+  } else {
+    toast(data.message || 'Failed to revoke.', 'danger');
+  }
+}
+
+// ─── Load stats ────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const data = await api.get('/api/developer/stats');
+
+  const keysEl = document.getElementById('statsKeys');
+  if (!data.keys || data.keys.length === 0) {
+    keysEl.innerHTML = '<p class="text-muted small">No usage data yet.</p>';
+  } else {
+    keysEl.innerHTML = `
+      <table class="table table-sm">
+        <thead><tr><th>Key</th><th>Label</th><th>Requests</th><th>First accessed</th><th>Last accessed</th></tr></thead>
+        <tbody>
+          ${data.keys.map(k => `
+            <tr>
+              <td class="font-monospace">${k.keyPrefix}</td>
+              <td>${k.label}</td>
+              <td>${k.totalRequests}</td>
+              <td>${k.firstAccessed ? new Date(k.firstAccessed).toLocaleString() : '—'}</td>
+              <td>${k.lastAccessed ? new Date(k.lastAccessed).toLocaleString() : '—'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  const endEl = document.getElementById('statsEndpoints');
+  if (!data.endpointBreakdown || data.endpointBreakdown.length === 0) {
+    endEl.innerHTML = '<p class="text-muted small">No endpoint data yet.</p>';
+  } else {
+    endEl.innerHTML = `
+      <table class="table table-sm">
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Hits</th><th>Last hit</th></tr></thead>
+        <tbody>
+          ${data.endpointBreakdown.map(e => `
+            <tr>
+              <td><span class="badge bg-dark">${e.method}</span></td>
+              <td class="font-monospace small">${e.endpoint}</td>
+              <td>${e.count}</td>
+              <td>${new Date(e.lastHit).toLocaleString()}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+}
+
+loadKeys();
+loadStats();
+</script>
+<%- include('../partials/foot') %>
