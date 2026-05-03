@@ -35,7 +35,7 @@ The app is organized into a conventional React folder structure — `App.tsx` is
 
 In plain language:
 
-> A scoped, role-gated dashboard that lets a university developer/analyst log in, paste a CW1-issued API key, and see live KPIs, 7 chart visualisations, an alumni explorer, and exportable reports — all powered by the alumni profile data flowing in from the CW1 API.
+> A scoped, role-gated dashboard that lets a university developer/analyst log in, paste a CW1-issued API key, and see live KPIs, 6 chart visualisations, an alumni explorer, and exportable reports — all powered by the alumni profile data flowing in from the CW1 API.
 
 Concretely, it provides:
 
@@ -43,7 +43,7 @@ Concretely, it provides:
 2. **Session-aware shell** — a fixed sidebar with navigation, current user email, logout, and an API-key textarea.
 3. **Dashboard page** — three KPI cards (Total Alumni / Employment Rate / Avg Certifications) computed live by the backend.
 4. **Alumni Explorer** — a filterable table of alumni with derived program(s), graduation-date display, latest company/industry, and certifications list.
-5. **Charts page** — 7 charts (6 chart types): Bar, Line, Pie, Doughnut, Horizontal Bar, and Radar (used for both providers and geography).
+5. **Charts page** — 6 charts (Bar, Line, Pie, Doughnut, Horizontal Bar, and Radar for geography).
 6. **Reports page** — CSV export, multi-page detailed PDF report, filter presets persisted to `localStorage`, downloadable composite chart image.
 7. **Defense-in-depth role guard** — alumni accounts cannot access the dashboard; if their session leaks in (e.g. they were also logged in on the EJS site at port 3000), the React app logs them out at three checkpoints.
 
@@ -101,7 +101,7 @@ frontend/
     ├── pages/
     │   ├── DashboardPage.tsx        ← KPI cards (Total Alumni / Employment Rate / Avg Certs)
     │   ├── AlumniPage.tsx           ← filterable alumni table
-    │   ├── ChartsPage.tsx           ← 7 chart types + downloadChartImage
+    │   ├── ChartsPage.tsx           ← 6 chart visuals + downloadChartImage
     │   ├── ReportsPage.tsx          ← exports (CSV / PDF) + filter presets + status block
     │   ├── AuthPage.tsx             ← login / forgot-password (+ registration redirect note)
     │   └── ResetWithTokenPage.tsx   ← password reset using ?token from email link
@@ -251,7 +251,7 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 - Filters card
 - Inline "Load Charts" button
 - "Download Chart Image" button → composes all canvases into one PNG ([pages/ChartsPage.tsx — `downloadChartImage`](src/pages/ChartsPage.tsx))
-- 7 chart cards in a 2-column grid, with the Polar spanning both columns:
+- 6 chart cards in a 2-column grid, with the geographic radar spanning both columns:
 
 | # | Title | Type | Source field |
 |---|---|---|---|
@@ -260,8 +260,7 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 | 3 | Employment by Industry Sector | Pie | `employment.industry` |
 | 4 | Most Common Job Titles | Doughnut | `employment.jobTitle` |
 | 5 | Top Employers | Horizontal Bar | `employment.company` |
-| 6 | Top Course Providers | Radar | `course.provider` |
-| 7 | Geographic Distribution | Radar | `currentCountry` (Location dropdown values) |
+| 6 | Geographic Distribution | Radar | `currentCountry` (Location dropdown values) |
 
 Certification Trend implementation details:
 
@@ -398,7 +397,6 @@ A manually composed multi-page jsPDF report with:
 - Top Employers (name + count)
 - Most Common Job Titles
 - Employment by Industry Sector
-- Top Course Providers
 - Geographic Distribution
 - Certification Trend by Year
 - Page numbers (`Page X of Y`) on every page
@@ -530,7 +528,7 @@ Listed verbatim from [`package.json`](package.json):
 | Manual canvas composition for chart image | Tailwind v4 emits `oklch()` colors that `html2canvas@1.4` can't parse. Painting `<canvas>` elements directly bypasses CSS interpretation entirely and works with any Tailwind version. |
 | `localStorage` only for presets, not API key | Demo safety — paste key, use, close tab, gone. No persistent token to risk leaking. |
 | Manual jsPDF layout (no jspdf-autotable) | One fewer dependency. The report is structured but uses simple positioned text — easy to read in code review. |
-| 7 charts (Bar / Line / Pie / Doughnut / HBar / Radar / Polar) | Meets the rubric's 6–8 chart-types requirement exactly. Each chart binds to a different aggregation, no two charts show the same data twice. |
+| 6 charts (Bar / Line / Pie / Doughnut / HBar / Radar) | Meets the rubric's 6–8 chart-types requirement. Each chart binds to a different aggregation, no two charts show the same data twice. |
 | Reports page status panel | Without it, "Load Report Data" looks like a no-op when 0 rows match. The status panel makes success / failure / empty all visible. |
 
 ---

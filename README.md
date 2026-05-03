@@ -338,7 +338,7 @@ For the viva, run through these in order. Total time ~6 minutes.
    - `GET http://localhost:3000/api/analytics/charts` with AR key → **403** (proves segregation)
 8. **Open the React dashboard** at `http://localhost:5173`, log in as the **developer** account, paste the *Analytics Dashboard* key in the sidebar.
 9. **Dashboard page** → Load Summary → 3 KPI cards populate.
-10. **Charts page** → Load Charts → all 7 chart types render.
+10. **Charts page** → Load Charts → all 6 chart visuals render.
 11. **Charts page** → Download Chart Image → `charts-dashboard.png` is saved.
 12. **Reports page** → Load Report Data → status block shows row counts → Export CSV → Export PDF (multi-page detailed report) → save a Filter Preset.
 13. **Alumni Explorer** → filter by `program = BSc Cyber Security & Forensics` (or set `industrySector = Technology`) → table updates.
@@ -380,7 +380,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 | Rubric line item | Implementation | Marks |
 |---|---|---|
 | Professional dashboard, intuitive nav, responsive, loading states | [App.tsx — `AppShell`](frontend/src/App.tsx) sidebar; loading flags in `useAnalytics`; status panel in Reports | 5 |
-| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | **7 charts** total (Bar, Line, Pie, Doughnut, Horizontal Bar, Radar + Radar for Geographic Distribution); Certification Trend is a dynamic multi-line chart (one dataset per certification across DB years), and Skills Gap bars reuse the same certification color palette; all live from `/api/analytics/charts` | 30 |
+| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | **6 charts** total (Bar, Line, Pie, Doughnut, Horizontal Bar, Radar for Geographic Distribution); Certification Trend is a dynamic multi-line chart (one dataset per certification across DB years), and Skills Gap bars reuse the same certification color palette; all live from `/api/analytics/charts` | 30 |
 | CSV/PDF export, custom reports, filter presets, downloadable chart images | `ReportsPage`: Papa CSV + jsPDF multi-page report + `localStorage` presets with named save/load/delete; manual canvas composition for chart image | 5 |
 | Granular permissions enforced on all endpoints, different keys for different clients, 403 unauthorized | `requireApiScope` middleware; AR vs Analytics keys testable on `/developer`; 403 `requiredAnyOf` body | 5 |
 | Bcrypt + password strength | Same as CW1 | 2.5 |
