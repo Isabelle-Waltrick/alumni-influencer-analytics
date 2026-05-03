@@ -380,7 +380,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 | Rubric line item | Implementation | Marks |
 |---|---|---|
 | Professional dashboard, intuitive nav, responsive, loading states | [App.tsx — `AppShell`](frontend/src/App.tsx) sidebar; loading flags in `useAnalytics`; status panel in Reports | 5 |
-| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | **7 charts** total (Bar, Line, Pie, Doughnut, Horizontal Bar, Radar + Radar for Geographic Distribution); severity colors on Skills Gap; all live from `/api/analytics/charts` | 30 |
+| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | **7 charts** total (Bar, Line, Pie, Doughnut, Horizontal Bar, Radar + Radar for Geographic Distribution); Certification Trend is a dynamic multi-line chart (one dataset per certification across DB years), and Skills Gap bars reuse the same certification color palette; all live from `/api/analytics/charts` | 30 |
 | CSV/PDF export, custom reports, filter presets, downloadable chart images | `ReportsPage`: Papa CSV + jsPDF multi-page report + `localStorage` presets with named save/load/delete; manual canvas composition for chart image | 5 |
 | Granular permissions enforced on all endpoints, different keys for different clients, 403 unauthorized | `requireApiScope` middleware; AR vs Analytics keys testable on `/developer`; 403 `requiredAnyOf` body | 5 |
 | Bcrypt + password strength | Same as CW1 | 2.5 |

@@ -146,7 +146,7 @@ const getChartData = async (req, res, next) => {
   try {
     const filter = buildProfileFilter(req.query);
     const profiles = await Profile.find(filter).select(
-      'certifications courses employment currentCountry'
+      'certifications courses employment currentCountry degrees graduationDate'
     );
 
     const byMapTop = (mapObj, top = 10) =>
@@ -161,6 +161,8 @@ const getChartData = async (req, res, next) => {
     const employers = {};
     const courseProviders = {};
     const certTrendByYear = {};
+    const certTrendByNameAndYear = {};
+    const alumniTotalsByYear = {};
     const industryMap = {};
     const geoLabels = [
       'London',
@@ -179,11 +181,34 @@ const getChartData = async (req, res, next) => {
     const geoLabelByLower = Object.fromEntries(geoLabels.map((label) => [label.toLowerCase(), label]));
 
     for (const p of profiles) {
+      const alumniYears = new Set();
+
+      (p.degrees || []).forEach((d) => {
+        const year = d?.completionDate ? new Date(d.completionDate).getUTCFullYear() : null;
+        if (year) alumniYears.add(String(year));
+      });
+
+      if (p?.graduationDate) {
+        const gradYear = new Date(p.graduationDate).getUTCFullYear();
+        if (gradYear) alumniYears.add(String(gradYear));
+      }
+
+      alumniYears.forEach((year) => {
+        alumniTotalsByYear[year] = (alumniTotalsByYear[year] || 0) + 1;
+      });
+
       (p.certifications || []).forEach((c) => {
-        if (c?.title) certs[c.title] = (certs[c.title] || 0) + 1;
+        const certTitle = c?.title ? String(c.title).trim() : '';
+        if (certTitle) certs[certTitle] = (certs[certTitle] || 0) + 1;
         if (c?.issuingBody) issuingBodies[c.issuingBody] = (issuingBodies[c.issuingBody] || 0) + 1;
         const year = c?.completionDate ? new Date(c.completionDate).getUTCFullYear() : null;
-        if (year) certTrendByYear[year] = (certTrendByYear[year] || 0) + 1;
+        if (year) {
+          certTrendByYear[year] = (certTrendByYear[year] || 0) + 1;
+          if (certTitle) {
+            if (!certTrendByNameAndYear[certTitle]) certTrendByNameAndYear[certTitle] = {};
+            certTrendByNameAndYear[certTitle][year] = (certTrendByNameAndYear[certTitle][year] || 0) + 1;
+          }
+        }
       });
 
       (p.employment || []).forEach((e) => {
@@ -214,9 +239,17 @@ const getChartData = async (req, res, next) => {
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([year, value]) => ({ year, value }));
 
+    const certificationTrendSeries = Object.entries(certTrendByNameAndYear)
+      .flatMap(([certification, years]) =>
+        Object.entries(years).map(([year, value]) => ({ certification, year, value }))
+      )
+      .sort((a, b) => Number(a.year) - Number(b.year) || a.certification.localeCompare(b.certification));
+
     res.json({
       skillsGap,
       certificationTrend: trend,
+      certificationTrendSeries,
+      alumniTotalsByYear,
       employmentByIndustry: byMapTop(industryMap, 10),
       commonJobTitles: byMapTop(jobTitles, 10),
       topEmployers: byMapTop(employers, 10),

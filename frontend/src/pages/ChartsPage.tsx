@@ -11,6 +11,61 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
   const { charts, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
 
+  // Returns the bar color for a Skills Gap entry — red/amber/orange by severity,
+  // falling back to a rotating palette for entries below the "monitor" threshold.
+  const skillColors = (n: number, severity?: string) => {
+    if (severity === 'critical') return '#EF4444'
+    if (severity === 'significant') return '#F59E0B'
+    if (severity === 'emerging') return '#F97316'
+    return ['#3B82F6', '#10B981', '#6366F1', '#14B8A6', '#A855F7'][n % 5]
+  }
+
+  const trendSeries = charts?.certificationTrendSeries || []
+  const trendYearLabels = Array.from(new Set(trendSeries.map((entry) => entry.year))).sort(
+    (a, b) => Number(a) - Number(b)
+  )
+  const certificationNames = Array.from(new Set(trendSeries.map((entry) => entry.certification)))
+  const totalsByYear = charts?.alumniTotalsByYear || {}
+  const usePercentages =
+    trendYearLabels.length > 0 && trendYearLabels.every((year) => (totalsByYear[year] || 0) > 0)
+
+  const certYearValues = trendSeries.reduce<Record<string, Record<string, number>>>((acc, entry) => {
+    if (!acc[entry.certification]) acc[entry.certification] = {}
+    acc[entry.certification][entry.year] = entry.value
+    return acc
+  }, {})
+
+  const lineColorFor = (index: number) => {
+    const hue = Math.round((index * 137.508) % 360)
+    return `hsl(${hue} 72% 44%)`
+  }
+
+  const lineColorByCertification = new Map(
+    certificationNames.map((certification, index) => [certification, lineColorFor(index)])
+  )
+
+  const certificationTrendDatasets = certificationNames.map((certification, index) => {
+    const borderColor = lineColorByCertification.get(certification) || lineColorFor(index)
+    return {
+      label: certification,
+      data: trendYearLabels.map((year) => {
+        const count = certYearValues[certification]?.[year] || 0
+        if (!usePercentages) return count
+        const total = totalsByYear[year] || 0
+        return total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0
+      }),
+      borderColor,
+      backgroundColor: borderColor,
+      tension: 0.4,
+      borderWidth: 3,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      pointBackgroundColor: borderColor,
+      pointBorderColor: '#ffffff',
+      fill: false,
+    }
+  })
+
   // Composes every <canvas> inside #charts-grid onto one image. Avoids html2canvas
   // because Tailwind v4 emits oklch() colors that html2canvas 1.x can't parse.
   const downloadChartImage = () => {
@@ -59,15 +114,6 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     link.click()
   }
 
-  // Returns the bar color for a Skills Gap entry — red/amber/orange by severity,
-  // falling back to a rotating palette for entries below the "monitor" threshold.
-  const skillColors = (n: number, severity?: string) => {
-    if (severity === 'critical') return '#EF4444'
-    if (severity === 'significant') return '#F59E0B'
-    if (severity === 'emerging') return '#F97316'
-    return ['#3B82F6', '#10B981', '#6366F1', '#14B8A6', '#A855F7'][n % 5]
-  }
-
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Trends, Charts and Graphs</h2>
@@ -79,8 +125,36 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       {error && <p className="text-sm text-rose-600">{error}</p>}
       {charts && (
         <div id="charts-grid" className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Skills Gap Analysis (Bar)</h3><Bar data={{ labels: charts.skillsGap.map((x) => x.label), datasets: [{ label: '% Alumni', data: charts.skillsGap.map((x) => x.percentage), backgroundColor: charts.skillsGap.map((x, i) => skillColors(i, x.severity)) }] }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Certification Trend (Line)</h3><Line data={{ labels: charts.certificationTrend.map((x) => x.year), datasets: [{ label: 'Certifications', data: charts.certificationTrend.map((x) => x.value), borderColor: '#326CE5', backgroundColor: 'rgba(50,108,229,0.1)', fill: true, tension: 0.35 }] }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Skills Gap Analysis (Bar)</h3><Bar data={{ labels: charts.skillsGap.map((x) => x.label), datasets: [{ label: '% Alumni', data: charts.skillsGap.map((x) => x.percentage), backgroundColor: charts.skillsGap.map((x, i) => lineColorByCertification.get(x.label) || skillColors(i, x.severity)) }] }} /></div>
+          <div className="rounded-lg border bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold">Certification Trend (Line)</h3>
+            <Line
+              id="trendsChart"
+              data={{ labels: trendYearLabels, datasets: certificationTrendDatasets }}
+              options={{
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { position: 'top' as const } },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: usePercentages
+                        ? 'Percentage of Alumni with Certification (%)'
+                        : 'Number of Certifications Earned',
+                    },
+                  },
+                  x: {
+                    title: {
+                      display: true,
+                      text: 'Year',
+                    },
+                  },
+                },
+              }}
+            />
+          </div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>

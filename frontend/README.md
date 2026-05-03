@@ -255,13 +255,21 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 
 | # | Title | Type | Source field |
 |---|---|---|---|
-| 1 | Skills Gap Analysis | Bar | `cert.title` (% of alumni) with severity color |
-| 2 | Certification Trend | Line | `cert.completionDate` year |
+| 1 | Skills Gap Analysis | Bar | `cert.title` (% of alumni), reusing the trend-line color palette by certification label |
+| 2 | Certification Trend | Line | Dynamic multi-line series from `certificationTrendSeries` (certification + year) |
 | 3 | Employment by Industry Sector | Pie | `employment.industry` |
 | 4 | Most Common Job Titles | Doughnut | `employment.jobTitle` |
 | 5 | Top Employers | Horizontal Bar | `employment.company` |
 | 6 | Top Course Providers | Radar | `course.provider` |
 | 7 | Geographic Distribution | Radar | `currentCountry` (Location dropdown values) |
+
+Certification Trend implementation details:
+
+- Years are built dynamically from distinct years in `certificationTrendSeries`.
+- One dataset is generated per distinct certification name.
+- Missing year values per certification are filled with `0`.
+- If `alumniTotalsByYear` has totals for all plotted years, y-values are rendered as percentages; otherwise raw counts are rendered.
+- Legend is shown at the top and includes every certification line.
 
 ### `/reports` — Reports & Exports
 
@@ -345,9 +353,13 @@ Each chart card in `ChartsPage` directly binds the `ChartsResponse` data to a Ch
 }} />
 ```
 
-### Severity color mapping (Skills Gap)
+### Skills Gap color mapping
 
 ```ts
+When a Skills Gap bar label matches a Certification Trend line label, the bar reuses that line's color.
+
+Fallback (only used when no matching trend line label exists):
+
 critical (>70%)    → '#EF4444'  red
 significant (>50%) → '#F59E0B'  amber
 emerging (>30%)    → '#F97316'  orange
