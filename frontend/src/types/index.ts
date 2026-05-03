@@ -33,6 +33,7 @@ export type AlumniRow = {
   linkedInUrl: string
   latestJobTitle: string
   latestCompany: string
+  certifications: string[]
   topCertification: string
   certificationsCount: number
   coursesCount: number

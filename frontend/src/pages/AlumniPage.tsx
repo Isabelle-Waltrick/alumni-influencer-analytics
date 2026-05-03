@@ -23,7 +23,7 @@ export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
               <th className="p-3">LinkedIn</th>
               <th className="p-3">Latest role</th>
               <th className="p-3">Latest company</th>
-              <th className="p-3">Top certification</th>
+              <th className="p-3">Certifications</th>
               <th className="p-3">Certs / Courses / Degrees</th>
             </tr>
           </thead>
@@ -38,7 +38,11 @@ export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
                 </td>
                 <td className="p-3">{a.latestJobTitle || '-'}</td>
                 <td className="p-3">{a.latestCompany || '-'}</td>
-                <td className="p-3">{a.topCertification || '-'}</td>
+                <td className="p-3 align-top">
+                  {a.certifications.length > 0
+                    ? <div className="space-y-1">{a.certifications.map((cert, index) => <div key={`${a._id}-cert-${index}`}>{cert}</div>)}</div>
+                    : '-'}
+                </td>
                 <td className="p-3 text-slate-600">
                   {a.certificationsCount} / {a.coursesCount} / {a.degreesCount}
                 </td>

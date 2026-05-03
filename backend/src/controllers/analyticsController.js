@@ -61,6 +61,9 @@ const listAlumni = async (req, res, next) => {
         return bt - at;
       });
       const topCertification = certsSorted[0]?.title || '';
+      const certifications = certsSorted
+        .map((c) => c?.title || '')
+        .filter(Boolean);
 
       return {
         _id: p._id,
@@ -69,6 +72,7 @@ const listAlumni = async (req, res, next) => {
         linkedInUrl: p.linkedInUrl || '',
         latestJobTitle: latestEmployment?.jobTitle || '',
         latestCompany: latestEmployment?.company || '',
+        certifications,
         topCertification,
         certificationsCount: (p.certifications || []).length,
         coursesCount: (p.courses || []).length,

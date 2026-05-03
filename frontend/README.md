@@ -42,7 +42,7 @@ Concretely, it provides:
 1. **Auth surface** — login / register / forgot password / verify email / reset password — all on the React app, sharing the same `User` collection as the CW1 EJS site.
 2. **Session-aware shell** — a fixed sidebar with navigation, current user email, logout, and an API-key textarea.
 3. **Dashboard page** — three KPI cards (Total Alumni / Employment Rate / Avg Certifications) computed live by the backend.
-4. **Alumni Explorer** — a filterable table of alumni with derived "latest job" / "top certification" / sub-array counts.
+4. **Alumni Explorer** — a filterable table of alumni with derived "latest job" / full certifications list / sub-array counts.
 5. **Charts page** — 7 charts (6 chart types): Bar, Line, Pie, Doughnut, Horizontal Bar, and Radar (used for both providers and geography).
 6. **Reports page** — CSV export, multi-page detailed PDF report, filter presets persisted to `localStorage`, downloadable composite chart image.
 7. **Defense-in-depth role guard** — alumni accounts cannot access the dashboard; if their session leaks in (e.g. they were also logged in on the EJS site at port 3000), the React app logs them out at three checkpoints.
@@ -243,8 +243,8 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 
 - Same filters card
 - Inline "Apply Filters" button
-- Table columns: **Name · LinkedIn · Latest role · Latest company · Top certification · C/Co/D** (certifications / courses / degrees count)
-- The "latest" / "top" derivation is done **server-side** in `analyticsController.listAlumni` so the React table needs no date sorting
+- Table columns: **Name · LinkedIn · Latest role · Latest company · Certifications · C/Co/D** (certifications / courses / degrees count)
+- The "latest" / certifications derivation is done **server-side** in `analyticsController.listAlumni` so the React table needs no date sorting
 - LinkedIn opens in a new tab
 
 ### `/charts` — Trends, Charts and Graphs
