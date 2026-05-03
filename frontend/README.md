@@ -354,16 +354,17 @@ Each chart card in `ChartsPage` directly binds the `ChartsResponse` data to a Ch
 
 ### Skills Gap color mapping
 
+Bar colors are determined by the certification's percentage of the total alumni pool (e.g. 7 of 10 students = 70%):
+
 ```ts
-When a Skills Gap bar label matches a Certification Trend line label, the bar reuses that line's color.
-
-Fallback (only used when no matching trend line label exists):
-
-critical (>70%)    → '#EF4444'  red
-significant (>50%) → '#F59E0B'  amber
-emerging (>30%)    → '#F97316'  orange
-monitor (else)     → palette[i % 5]  blue/green/etc.
+skillGapColor(value: number):
+  >= 70%  → '#EF4444'  red     (CRITICAL GAP)
+  >= 50%  → '#F97316'  orange  (SIGNIFICANT GAP)
+  >= 20%  → '#EAB308'  yellow  (EMERGING GAP)
+  < 20%   → '#6B7280'  gray    (MONITOR)
 ```
+
+The same thresholds are applied in the backend (`analyticsController.js`) when computing the `severity` field, and in the frontend tooltip callback. The backend calculates percentage as `Math.round((certCount / totalAlumni) * 100)`.
 
 Tooltips, legends, hover behaviour are Chart.js defaults — no custom plugin code needed.
 

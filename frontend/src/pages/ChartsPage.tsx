@@ -11,13 +11,13 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
   const { charts, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
 
-  // Returns the bar color for a Skills Gap entry — red/amber/orange by severity,
-  // falling back to a rotating palette for entries below the "monitor" threshold.
-  const skillColors = (n: number, severity?: string) => {
-    if (severity === 'critical') return '#EF4444'
-    if (severity === 'significant') return '#F59E0B'
-    if (severity === 'emerging') return '#F97316'
-    return ['#3B82F6', '#10B981', '#6366F1', '#14B8A6', '#A855F7'][n % 5]
+  // Color-codes a Skills Gap bar by its percentage value:
+  // Critical (>70%) → red, Significant (>50%) → orange, Emerging (>20%) → yellow, Monitor → gray.
+  const skillGapColor = (value: number) => {
+    if (value >= 70) return '#EF4444'
+    if (value >= 50) return '#F97316'
+    if (value >= 20) return '#EAB308'
+    return '#6B7280'
   }
 
   const trendSeries = charts?.certificationTrendSeries || []
@@ -125,7 +125,45 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       {error && <p className="text-sm text-rose-600">{error}</p>}
       {charts && (
         <div id="charts-grid" className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Skills Gap Analysis (Bar)</h3><Bar data={{ labels: charts.skillsGap.map((x) => x.label), datasets: [{ label: '% Alumni', data: charts.skillsGap.map((x) => x.percentage), backgroundColor: charts.skillsGap.map((x, i) => lineColorByCertification.get(x.label) || skillColors(i, x.severity)) }] }} /></div>
+          <div className="rounded-lg border bg-white p-4">
+            <h3 className="mb-3 text-sm font-semibold">Skills Gap Analysis (Bar)</h3>
+            <Bar
+              data={{
+                labels: charts.skillsGap.map((x) => x.label),
+                datasets: [{
+                  label: '% Alumni',
+                  data: charts.skillsGap.map((x) => x.percentage),
+                  backgroundColor: charts.skillsGap.map((x) => skillGapColor(x.percentage)),
+                  borderWidth: 0,
+                }],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => {
+                        const v = context.parsed.y ?? 0
+                        const label = v >= 70 ? 'CRITICAL GAP' : v >= 50 ? 'SIGNIFICANT GAP' : v >= 20 ? 'EMERGING GAP' : 'MONITOR'
+                        return `${v}% of alumni (${label})`
+                      },
+                    },
+                  },
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: { display: true, text: 'Percentage of Alumni (%)' },
+                  },
+                  x: {
+                    title: { display: true, text: 'Certification' },
+                  },
+                },
+              }}
+            />
+          </div>
           <div className="rounded-lg border bg-white p-4">
             <h3 className="mb-3 text-sm font-semibold">Certification Trend (Line)</h3>
             <Line
@@ -158,7 +196,7 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
-          <div className="rounded-lg border bg-white p-4 md:col-span-2">
+          <div className="rounded-lg border bg-white p-4">
             <h3 className="mb-3 text-sm font-semibold">Geographic Distribution</h3>
             <p className="mb-3 text-xs text-slate-500">Where alumni are currently working by region.</p>
             <Radar

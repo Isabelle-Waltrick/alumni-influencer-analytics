@@ -231,7 +231,7 @@ const getChartData = async (req, res, next) => {
     const total = profiles.length || 1;
     const skillsGap = byMapTop(certs, 10).map((item) => {
       const pct = Math.round((item.value / total) * 100);
-      const severity = pct > 70 ? 'critical' : pct > 50 ? 'significant' : pct > 30 ? 'emerging' : 'monitor';
+      const severity = pct >= 70 ? 'critical' : pct >= 50 ? 'significant' : pct >= 20 ? 'emerging' : 'monitor';
       return { label: item.label, percentage: pct, severity };
     });
 
