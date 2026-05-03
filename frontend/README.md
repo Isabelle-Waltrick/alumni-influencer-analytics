@@ -39,7 +39,7 @@ In plain language:
 
 Concretely, it provides:
 
-1. **Auth surface** — login / register / forgot password / verify email / reset password — all on the React app, sharing the same `User` collection as the CW1 EJS site.
+1. **Auth surface** — login / forgot password / reset password on the React app. Registration is intentionally disabled on port 5173 and must be done on the CW1 EJS site at `http://localhost:3000/register`. Email verification is also handled on the backend domain (`http://localhost:3000/api/auth/verify-email/:token`).
 2. **Session-aware shell** — a fixed sidebar with navigation, current user email, logout, and an API-key textarea.
 3. **Dashboard page** — three KPI cards (Total Alumni / Employment Rate / Avg Certifications) computed live by the backend.
 4. **Alumni Explorer** — a filterable table of alumni with derived program(s), graduation-date display, latest company/industry, and certifications list.
@@ -103,9 +103,8 @@ frontend/
     │   ├── AlumniPage.tsx           ← filterable alumni table
     │   ├── ChartsPage.tsx           ← 7 chart types + downloadChartImage
     │   ├── ReportsPage.tsx          ← exports (CSV / PDF) + filter presets + status block
-    │   ├── AuthPage.tsx             ← login / register / forgot-password
-    │   ├── ResetWithTokenPage.tsx   ← password reset using ?token from email link
-    │   └── VerifyEmailPage.tsx      ← email verification using ?token from email link
+    │   ├── AuthPage.tsx             ← login / forgot-password (+ registration redirect note)
+    │   └── ResetWithTokenPage.tsx   ← password reset using ?token from email link
     │
     └── (legacy starter files counter.ts / main.ts / style.css unused — safe to delete)
 ```
@@ -126,10 +125,9 @@ The app is one rendering tree:
     [Routes]
       /                    -> Navigate to /dashboard or /login
       /login               -> AuthPage mode=login
-      /register            -> AuthPage mode=register
+      /register            -> redirect to /login (registration not available in React app)
       /forgot-password     -> AuthPage mode=forgot
       /reset-password/:t   -> ResetWithTokenPage
-      /verify-email/:t     -> VerifyEmailPage
       /dashboard           -> Protected → DashboardPage
       /alumni              -> Protected → AlumniPage
       /charts              -> Protected → ChartsPage
@@ -184,13 +182,13 @@ The CW1 EJS site and the CW2 React app share the same `User` collection and the 
 
 All auth endpoints are on the backend's `/api/auth/*`. The React app calls them with `withCredentials: true` so the session cookie is sent.
 
-### Register
+### Registration policy
 
-```
-POST /api/auth/register { email, password, role: 'developer' }
-```
+Frontend registration is disabled.
 
-`role` is hardcoded to `developer` in this UI ([pages/AuthPage.tsx](src/pages/AuthPage.tsx)) — the React app is for developer/analyst users only. Alumni register on the EJS site at `:3000/register`.
+- `http://localhost:5173/register` redirects to `/login`
+- The login page explicitly points users to `http://localhost:3000/register`
+- New accounts (alumnus/developer) must be created from the backend EJS registration page
 
 ### Login
 
@@ -203,11 +201,11 @@ else -> setSessionUser + navigate('/dashboard')
 
 ### Forgot / reset
 
-Forgot password sends an email containing `${CLIENT_ORIGIN}/reset-password/<token>`. The React app's `ResetWithTokenPage` reads the token from the URL and POSTs the new password.
+Forgot password sends an email containing `${CLIENT_ORIGIN}/reset-password/<token>`. The React app's `ResetWithTokenPage` reads the token from the URL and POSTs the new password. Reset emails are issued for any existing account (verified or unverified).
 
 ### Verify email
 
-Verification emails link to `${CLIENT_ORIGIN}/verify-email/<token>`. The `VerifyEmailPage` calls `GET /api/auth/verify-email/:token` on mount.
+Verification is not handled by the React app. Verification emails link directly to the backend endpoint at `${BASE_URL}/api/auth/verify-email/<token>`.
 
 ### CSRF
 
@@ -221,7 +219,7 @@ const getCsrfHeaders = async () => {
 }
 ```
 
-is awaited before login / register / forgot / reset / logout. When CSRF is off the helper returns an empty object.
+is awaited before login / forgot / reset / logout. When CSRF is off the helper returns an empty object.
 
 ---
 

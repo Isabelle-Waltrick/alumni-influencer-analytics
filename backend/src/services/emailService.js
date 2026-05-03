@@ -1,9 +1,10 @@
 const transporter = require('../config/email');
 
 const frontendOrigin = () => process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const backendOrigin = () => process.env.BASE_URL || 'http://localhost:3000';
 
 const sendVerificationEmail = async (to, token) => {
-  const link = `${frontendOrigin()}/verify-email/${token}`;
+  const link = `${backendOrigin()}/api/auth/verify-email/${token}`;
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to,

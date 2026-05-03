@@ -353,7 +353,7 @@ CSRF: enforced when `ENABLE_CSRF=true`. Rate limit: 20 requests / 15 min per IP.
 | `GET` | `/verify-email/:token` | — | path token | Marks `isVerified=true`, clears token. 400 if expired. |
 | `POST` | `/login` | — | `{ email, password }` | Sets session. 401 invalid creds, 403 not verified. Logs to `AuthLoginLog`. |
 | `POST` | `/logout` | session | — | Destroys session, clears `connect.sid`. |
-| `POST` | `/forgot-password` | — | `{ email }` | Always 200 with same message regardless of whether user exists (prevents enumeration). |
+| `POST` | `/forgot-password` | — | `{ email }` | Always 200 with same message regardless of whether user exists (prevents enumeration). If the account exists, a reset token/email is issued even when `isVerified=false`. |
 | `POST` | `/reset-password/:token` | — | `{ password }` | Validates new password strength. 400 if token expired. |
 | `GET` | `/me` | session | — | Returns the logged-in user (id, email, role, isVerified). Used by the React app's session check. |
 
@@ -593,7 +593,7 @@ require('./src/config/db')().then(async () => {
 
 [`src/services/emailService.js`](src/services/emailService.js) exports:
 
-- `sendVerificationEmail(email, token)` — link points to `${CLIENT_ORIGIN}/verify-email/${token}` so the React app handles verification (CW2-friendly). The EJS site doesn't need a verify route because the API endpoint responds with a JSON message that the React `VerifyEmailPage` component renders.
+- `sendVerificationEmail(email, token)` — link points to `${BASE_URL}/api/auth/verify-email/${token}` so verification is handled directly by the backend endpoint (no frontend verification page required).
 - `sendPasswordResetEmail(email, token)` — link points to `${CLIENT_ORIGIN}/reset-password/${token}`.
 - `sendBidResultEmail(email, won, dateString)` — sent by midnight cron to every bidder.
 

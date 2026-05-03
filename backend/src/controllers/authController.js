@@ -121,7 +121,7 @@ const forgotPassword = async (req, res, next) => {
     // always return the same response — don't confirm whether account exists
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    if (user && user.isVerified) {
+    if (user) {
       const resetToken = generateToken();
       user.resetToken = resetToken;
       user.resetTokenExpiry = inHours(1);

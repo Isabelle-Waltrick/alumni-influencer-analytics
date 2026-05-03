@@ -202,7 +202,7 @@ npm run dev
 
 1. Register an **alumnus** account at [http://localhost:3000/register](http://localhost:3000/register), check Mailtrap inbox, click verify.
 2. Log in at [http://localhost:3000/login](http://localhost:3000/login) → fill in profile, sub-arrays, place a bid.
-3. In a *separate* browser (or incognito), register a **developer** account; verify; log in.
+3. In a *separate* browser (or incognito), register a **developer** account at [http://localhost:3000/register](http://localhost:3000/register); verify; log in.
 4. On `/developer`, click the **Analytics Dashboard** preset → Generate key → copy the `ak_...` value.
 5. Open [http://localhost:5173](http://localhost:5173), log in as the *same* developer, paste the key into the sidebar, click Load Charts.
 
@@ -290,7 +290,7 @@ Located in `backend/.env` (template: `backend/.env.example`):
 | `PORT` | Express listen port | `3000` | No (defaults to 3000) |
 | `NODE_ENV` | `development` / `production` (controls `secure` cookie flag) | `development` | Recommended |
 | `BASE_URL` | Server's external base URL — used in email links | `http://localhost:3000` | Yes |
-| `CLIENT_ORIGIN` | React app's origin — used by CORS allow-list and email verify links | `http://localhost:5173` | **Yes** |
+| `CLIENT_ORIGIN` | React app's origin — used by CORS allow-list and password-reset links | `http://localhost:5173` | **Yes** |
 | `TZ` | Process timezone — must be `UTC` so cron midnight/6PM align across machines | `UTC` | Yes |
 | `MONGO_URI` | Mongoose connection string | `mongodb://localhost:27017/ar_alumni` | Yes |
 | `SESSION_SECRET` | Random 32+ byte string for session signing | (generated) | Yes |

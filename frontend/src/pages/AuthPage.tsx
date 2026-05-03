@@ -5,7 +5,7 @@ import { apiBase, getApiErrorMessage, getCsrfHeaders } from '../lib/api'
 import type { SessionUser } from '../types'
 
 type Props = {
-  mode: 'login' | 'register' | 'forgot'
+  mode: 'login' | 'forgot'
   onLoginSuccess?: (user: SessionUser) => void
   onErrorToast: (message: string) => void
 }
@@ -31,18 +31,11 @@ export const AuthPage = ({ mode, onLoginSuccess, onErrorToast }: Props) => {
             `${apiBase}/api/auth/logout`,
             {},
             { withCredentials: true, headers: csrfHeaders }
-          ).catch(() => {})
+          ).catch(() => { })
           throw new Error('This account is not permitted on the analytics dashboard. Use http://localhost:3000 for alumni profile and bidding.')
         }
         onLoginSuccess?.(me.data.user)
         navigate('/dashboard')
-      } else if (mode === 'register') {
-        await axios.post(
-          `${apiBase}/api/auth/register`,
-          { email, password, role: 'developer' },
-          { withCredentials: true, headers: csrfHeaders }
-        )
-        setMessage('Registered. Verify email from inbox.')
       } else if (mode === 'forgot') {
         await axios.post(
           `${apiBase}/api/auth/forgot-password`,
@@ -60,7 +53,7 @@ export const AuthPage = ({ mode, onLoginSuccess, onErrorToast }: Props) => {
 
   return (
     <section className="w-full max-w-md rounded-lg border bg-white p-5">
-      <h2 className="mb-4 text-lg font-semibold">{mode === 'login' ? 'Login' : mode === 'register' ? 'Register' : 'Reset Password'}</h2>
+      <h2 className="mb-4 text-lg font-semibold">{mode === 'login' ? 'Login' : 'Reset Password'}</h2>
       <div className="space-y-3">
         <input className="w-full rounded border p-2 text-sm" placeholder="University email" value={email} onChange={(e) => setEmail(e.target.value)} />
         {mode !== 'forgot' && (
@@ -70,9 +63,17 @@ export const AuthPage = ({ mode, onLoginSuccess, onErrorToast }: Props) => {
       </div>
       <div className="mt-4 flex gap-3 text-xs text-slate-600">
         {mode !== 'login' && <Link to="/login" className="hover:underline">Go to login</Link>}
-        {mode !== 'register' && <Link to="/register" className="hover:underline">Create account</Link>}
         {mode !== 'forgot' && <Link to="/forgot-password" className="hover:underline">Forgot password</Link>}
       </div>
+      {mode === 'login' && (
+        <p className="mt-3 text-xs text-slate-600">
+          Registration is available only on{' '}
+          <a className="text-blue-700 hover:underline" href="http://localhost:3000/register" target="_blank" rel="noreferrer">
+            http://localhost:3000/register
+          </a>
+          .
+        </p>
+      )}
       {message && <p className="mt-3 text-sm text-red-700">{message}</p>}
     </section>
   )
