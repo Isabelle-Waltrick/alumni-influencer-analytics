@@ -129,7 +129,6 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       { left: 'Skills-gap items', right: charts?.skillsGap?.length ?? 0 },
       { left: 'Top employers', right: charts?.topEmployers?.length ?? 0 },
       { left: 'Common job titles', right: charts?.commonJobTitles?.length ?? 0 },
-      { left: 'Top course providers', right: charts?.topCourseProviders?.length ?? 0 },
       { left: 'Geographic distribution entries', right: charts?.geographicDistribution?.length ?? 0 },
     ])
 
@@ -183,10 +182,6 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     if (charts?.employmentByIndustry?.length) {
       sectionHeader('Employment by Industry Sector')
       writeList(charts.employmentByIndustry.map((x: { label: string; value: number }) => ({ left: x.label, right: x.value })))
-    }
-    if (charts?.topCourseProviders?.length) {
-      sectionHeader('Top Course Providers')
-      writeList(charts.topCourseProviders.map((x) => ({ left: x.label, right: x.value })))
     }
     if (charts?.geographicDistribution?.length) {
       sectionHeader('Geographic Distribution')
