@@ -8,9 +8,7 @@ export const navLinks = [
 ]
 
 export const emptyFilters: Filters = {
-  certification: '',
-  company: '',
-  jobTitle: '',
-  certYearFrom: '',
-  certYearTo: '',
+  program: '',
+  graduationDate: '',
+  industrySector: '',
 }

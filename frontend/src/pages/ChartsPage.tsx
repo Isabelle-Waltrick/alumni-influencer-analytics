@@ -71,9 +71,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Trends, Charts and Graphs</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} />
+      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Load Charts" onAction={fetchAll} />
       <div className="flex gap-2">
-        <button onClick={fetchAll} className="rounded bg-slate-900 px-4 py-2 text-sm text-white">Load Charts</button>
         <button onClick={downloadChartImage} className="rounded border px-4 py-2 text-sm">Download Chart Image</button>
       </div>
       {loading && <p className="text-sm text-slate-500">Loading...</p>}

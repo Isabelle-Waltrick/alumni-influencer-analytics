@@ -3,37 +3,32 @@ const FeaturedAlumni = require('../models/FeaturedAlumni');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-// Filters are anchored on sub-document arrays the EJS profile actually captures:
-// certifications, courses, employment, degrees. Free-text fields use a
-// case-insensitive partial-match regex so "AWS" matches "AWS Certified Developer".
+// Filters are anchored on profile fields the EJS profile captures:
+// degree title + degree completion date + employment industry.
 const buildProfileFilter = (query) => {
   const filter = {};
 
-  // Certification element match: combines title regex + completionDate range so
-  // both clauses must be satisfied by the SAME certification entry.
-  const certElem = {};
-  if (query.certification) {
-    certElem.title = { $regex: new RegExp(escapeRegex(query.certification), 'i') };
-  }
-  if (query.certYearFrom || query.certYearTo) {
-    certElem.completionDate = {};
-    if (query.certYearFrom) certElem.completionDate.$gte = new Date(`${query.certYearFrom}-01-01T00:00:00.000Z`);
-    if (query.certYearTo) certElem.completionDate.$lte = new Date(`${query.certYearTo}-12-31T23:59:59.999Z`);
-  }
-  if (Object.keys(certElem).length > 0) {
-    filter.certifications = { $elemMatch: certElem };
-  }
-
-  // Employment element match: company + jobTitle on the same employment record.
+  // Employment element match: industry sector.
   const empElem = {};
-  if (query.company) {
-    empElem.company = { $regex: new RegExp(escapeRegex(query.company), 'i') };
-  }
-  if (query.jobTitle) {
-    empElem.jobTitle = { $regex: new RegExp(escapeRegex(query.jobTitle), 'i') };
+  if (query.industrySector) {
+    empElem.industry = { $regex: new RegExp(escapeRegex(query.industrySector), 'i') };
   }
   if (Object.keys(empElem).length > 0) {
     filter.employment = { $elemMatch: empElem };
+  }
+
+  // Degree element match: program title + graduation date on the same degree.
+  const degreeElem = {};
+  if (query.program) {
+    degreeElem.title = { $regex: new RegExp(escapeRegex(query.program), 'i') };
+  }
+  if (query.graduationDate) {
+    const start = new Date(`${query.graduationDate}T00:00:00.000Z`);
+    const end = new Date(`${query.graduationDate}T23:59:59.999Z`);
+    degreeElem.completionDate = { $gte: start, $lte: end };
+  }
+  if (Object.keys(degreeElem).length > 0) {
+    filter.degrees = { $elemMatch: degreeElem };
   }
 
   return filter;

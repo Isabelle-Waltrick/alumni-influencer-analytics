@@ -12,8 +12,7 @@ export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">View Alumni</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} />
-      <button onClick={fetchAll} className="rounded bg-slate-900 px-4 py-2 text-sm text-white">Apply Filters</button>
+      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
       {loading && <p className="text-sm text-slate-500">Loading...</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <div className="overflow-auto rounded-lg border bg-white">

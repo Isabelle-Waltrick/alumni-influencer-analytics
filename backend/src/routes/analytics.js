@@ -14,11 +14,9 @@ const {
 const router = express.Router();
 
 const filterValidation = [
-  query('certification').optional().trim().isLength({ max: 120 }).withMessage('certification text too long'),
-  query('company').optional().trim().isLength({ max: 120 }).withMessage('company text too long'),
-  query('jobTitle').optional().trim().isLength({ max: 120 }).withMessage('jobTitle text too long'),
-  query('certYearFrom').optional().isInt({ min: 1900, max: 2100 }).withMessage('certYearFrom must be a 4-digit year'),
-  query('certYearTo').optional().isInt({ min: 1900, max: 2100 }).withMessage('certYearTo must be a 4-digit year'),
+  query('program').optional().trim().isLength({ max: 160 }).withMessage('program text too long'),
+  query('graduationDate').optional().isISO8601().withMessage('graduationDate must be a valid date'),
+  query('industrySector').optional().trim().isLength({ max: 120 }).withMessage('industrySector text too long'),
 ];
 
 // Dashboard and reporting datasets.

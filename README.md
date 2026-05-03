@@ -341,7 +341,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 10. **Charts page** → Load Charts → all 7 chart types render.
 11. **Charts page** → Download Chart Image → `charts-dashboard.png` is saved.
 12. **Reports page** → Load Report Data → status block shows row counts → Export CSV → Export PDF (multi-page detailed report) → save a Filter Preset.
-13. **Alumni Explorer** → filter by `certification = AWS` → table updates.
+13. **Alumni Explorer** → filter by `program = BSc Cyber Security & Forensics` (or set `industrySector = Technology`) → table updates.
 14. **Demonstrate revocation**: on `/developer`, click Revoke on the AR key → repeat the AR-key curl → 401 Invalid or revoked API key.
 15. **Show Swagger** at [http://localhost:3000/api-docs](http://localhost:3000/api-docs) — every endpoint documented with request/response examples.
 16. **Show usage stats** on `/developer` — request counts and endpoint breakdown updated in real time.
@@ -408,7 +408,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 These are intentional simplifications, called out so they're not surprises in the viva:
 
 1. **University-domain validation is not enforced** ([User.js:11](backend/src/models/User.js)) — comment says "domain validation will be added in a later iteration". CW1 brief mandates this; addressing it would be a one-line regex in the email validator.
-2. **`programme`, `industrySector`, `currentCountry`, `graduationDate`** fields exist in `Profile` but are not exposed on the EJS profile form. Note: `employment.industry` (per-role industry) *is* captured in the Employment tab and powers the Employment by Industry Sector chart.
+2. **`programme` and `industrySector` root fields** in `Profile` are still not exposed in the EJS personal-info form. Dashboard filters therefore use fields that are captured in existing sub-sections: degree title/completion date (`degrees[]`) and employment industry (`employment[]`).
 3. **`hasEventBonus` is not toggled by any UI** — the field exists for the 4th-bid bonus but no flow flips it. A future admin endpoint or attendance webhook would set it.
 4. **No frontend tests / no backend tests** — this is a coursework prototype. Validation lives in `express-validator` chains and Mongoose schema validation.
 5. **CSP allows `'unsafe-inline'`** ([app.js:30-32](backend/src/app.js)) — required because the EJS pages have inline `<script>` blocks. Tightening would require extracting all page scripts and adding nonces.

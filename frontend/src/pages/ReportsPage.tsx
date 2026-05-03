@@ -130,7 +130,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       { left: 'Top employers', right: charts?.topEmployers?.length ?? 0 },
       { left: 'Common job titles', right: charts?.commonJobTitles?.length ?? 0 },
       { left: 'Top course providers', right: charts?.topCourseProviders?.length ?? 0 },
-      { left: 'Top degree institutions', right: charts?.topDegreeInstitutions?.length ?? 0 },
+      { left: 'Geographic distribution entries', right: charts?.geographicDistribution?.length ?? 0 },
     ])
 
     // Alumni table — column positions chosen to fit A4 portrait at ~9pt
@@ -215,11 +215,14 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Reports & Exports</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} />
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        actionLabel={loading ? 'Loading…' : 'Load Report Data'}
+        onAction={fetchAll}
+        actionDisabled={loading}
+      />
       <div className="flex flex-wrap gap-2">
-        <button onClick={fetchAll} className="rounded bg-slate-900 px-4 py-2 text-sm text-white" disabled={loading}>
-          {loading ? 'Loading…' : 'Load Report Data'}
-        </button>
         <button onClick={exportCsv} disabled={!dataReady}
           className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-slate-400">Export CSV</button>
         <button onClick={exportPdf} disabled={!dataReady}

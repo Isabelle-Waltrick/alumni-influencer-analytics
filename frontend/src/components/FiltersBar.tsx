@@ -1,44 +1,42 @@
 import type { Filters } from '../types'
 
-type Props = { filters: Filters; setFilters: (f: Filters) => void }
+type Props = {
+  filters: Filters
+  setFilters: (f: Filters) => void
+  actionLabel: string
+  onAction: () => void
+  actionDisabled?: boolean
+}
 
-export const FiltersBar = ({ filters, setFilters }: Props) => (
-  <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-5">
+export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, actionDisabled = false }: Props) => (
+  <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-3">
+    <h3 className="text-sm font-semibold text-slate-700 md:col-span-3">Filters</h3>
     <input
       className="rounded-md border border-slate-300 p-2 text-sm"
-      placeholder="Certification (e.g. AWS)"
-      value={filters.certification}
-      onChange={(e) => setFilters({ ...filters, certification: e.target.value })}
+      placeholder="Program (e.g. BSc Computer Science)"
+      value={filters.program}
+      onChange={(e) => setFilters({ ...filters, program: e.target.value })}
+    />
+    <input
+      type="date"
+      className="rounded-md border border-slate-300 p-2 text-sm"
+      value={filters.graduationDate}
+      onChange={(e) => setFilters({ ...filters, graduationDate: e.target.value })}
     />
     <input
       className="rounded-md border border-slate-300 p-2 text-sm"
-      placeholder="Company"
-      value={filters.company}
-      onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+      placeholder="Industry sector (e.g. Technology & IT)"
+      value={filters.industrySector}
+      onChange={(e) => setFilters({ ...filters, industrySector: e.target.value })}
     />
-    <input
-      className="rounded-md border border-slate-300 p-2 text-sm"
-      placeholder="Job title"
-      value={filters.jobTitle}
-      onChange={(e) => setFilters({ ...filters, jobTitle: e.target.value })}
-    />
-    <input
-      type="number"
-      min={1900}
-      max={2100}
-      className="rounded-md border border-slate-300 p-2 text-sm"
-      placeholder="Cert year from"
-      value={filters.certYearFrom}
-      onChange={(e) => setFilters({ ...filters, certYearFrom: e.target.value })}
-    />
-    <input
-      type="number"
-      min={1900}
-      max={2100}
-      className="rounded-md border border-slate-300 p-2 text-sm"
-      placeholder="Cert year to"
-      value={filters.certYearTo}
-      onChange={(e) => setFilters({ ...filters, certYearTo: e.target.value })}
-    />
+    <div className="md:col-span-3">
+      <button
+        onClick={onAction}
+        disabled={actionDisabled}
+        className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:cursor-not-allowed disabled:bg-slate-500"
+      >
+        {actionLabel}
+      </button>
+    </div>
   </div>
 )

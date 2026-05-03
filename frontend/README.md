@@ -95,7 +95,7 @@ frontend/
     ├── components/
     │   ├── AppShell.tsx             ← sidebar + main layout (used by all dashboard pages)
     │   ├── AuthLayout.tsx           ← centered card layout for auth pages
-    │   ├── FiltersBar.tsx           ← 5-input filter row (cert / company / job / year from / year to)
+    │   ├── FiltersBar.tsx           ← filter card with Program / Graduation date / Industry sector + per-page action button
     │   ├── Toast.tsx                ← top-right error toast
     │   └── Protected.tsx            ← role guard — redirects non-developer sessions to /login
     ├── pages/
@@ -229,8 +229,7 @@ is awaited before login / register / forgot / reset / logout. When CSRF is off t
 
 ### `/dashboard` — Summary KPIs
 
-- Filters bar (5 inputs: certification, company, jobTitle, certYearFrom, certYearTo)
-- "Load Summary" button → fires `useAnalytics.fetchAll()`
+- Filters card (Program, Graduation date, Industry sector) with inline "Load Summary" button
 - 3 KPI cards: Total Alumni / Employment Rate / Avg Certifications
 - Loading + error states inline
 
@@ -242,16 +241,16 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 
 ### `/alumni` — Alumni Explorer
 
-- Same filters bar
-- "Apply Filters" button
+- Same filters card
+- Inline "Apply Filters" button
 - Table columns: **Name · LinkedIn · Latest role · Latest company · Top certification · C/Co/D** (certifications / courses / degrees count)
 - The "latest" / "top" derivation is done **server-side** in `analyticsController.listAlumni` so the React table needs no date sorting
 - LinkedIn opens in a new tab
 
 ### `/charts` — Trends, Charts and Graphs
 
-- Filters bar
-- "Load Charts" button
+- Filters card
+- Inline "Load Charts" button
 - "Download Chart Image" button → composes all canvases into one PNG ([pages/ChartsPage.tsx — `downloadChartImage`](src/pages/ChartsPage.tsx))
 - 7 chart cards in a 2-column grid, with the Polar spanning both columns:
 
@@ -267,8 +266,8 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 
 ### `/reports` — Reports & Exports
 
-- Filters bar
-- "Load Report Data" button (text changes to "Loading…")
+- Filters card
+- Inline "Load Report Data" button (text changes to "Loading…")
 - **Status panel** that shows: loading state, error, or success with row counts (Alumni rows / Skills-gap items / Top employers)
 - Export CSV (Papa) — disabled until data loaded
 - Export PDF (multi-page jsPDF report — see [Exports](#exports))
@@ -320,17 +319,15 @@ The textarea's placeholder reads: *"Paste key with read:analytics scope"* — th
 
 ## Filters (and how they map to backend)
 
-Filters are five inputs aligned with the *sub-array fields* the EJS profile form actually captures (so dashboard data isn't artificially empty):
+Filters are three inputs aligned with profile fields the EJS form captures:
 
 | Frontend input | Query param | Backend treatment |
 |---|---|---|
-| Certification | `certification` | `certifications.$elemMatch.title` regex (case-insensitive partial) |
-| Company | `company` | `employment.$elemMatch.company` regex |
-| Job title | `jobTitle` | `employment.$elemMatch.jobTitle` regex (combined with company on the same employment row) |
-| Cert year from | `certYearFrom` | `certifications.$elemMatch.completionDate >= year-01-01` |
-| Cert year to | `certYearTo` | `certifications.$elemMatch.completionDate <= year-12-31` |
+| Program | `program` | `degrees.$elemMatch.title` regex (degree title, case-insensitive partial) |
+| Graduation date | `graduationDate` | `degrees.$elemMatch.completionDate` date-equality match (same UTC day) |
+| Industry sector | `industrySector` | `employment.$elemMatch.industry` regex (case-insensitive partial) |
 
-Empty inputs are dropped by `encodeFilters(f)` so they never appear in the URL. Server-side validators reject malformed years (must be 1900–2100 integer).
+Empty inputs are dropped by `encodeFilters(f)` so they never appear in the URL. Server-side validators reject malformed dates.
 
 ---
 

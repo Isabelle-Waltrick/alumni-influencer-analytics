@@ -1,9 +1,7 @@
 export type Filters = {
-  certification: string
-  company: string
-  jobTitle: string
-  certYearFrom: string
-  certYearTo: string
+  program: string
+  graduationDate: string
+  industrySector: string
 }
 
 export type Summary = {
