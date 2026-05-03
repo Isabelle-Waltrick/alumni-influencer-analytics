@@ -21,7 +21,7 @@ export type SkillsItem = { label: string; percentage: number; severity: string }
 export type ChartsResponse = {
   skillsGap: SkillsItem[]
   certificationTrend: Array<{ year: string; value: number }>
-  topIssuingBodies: ChartItem[]
+  employmentByIndustry: ChartItem[]
   commonJobTitles: ChartItem[]
   topEmployers: ChartItem[]
   topCourseProviders: ChartItem[]

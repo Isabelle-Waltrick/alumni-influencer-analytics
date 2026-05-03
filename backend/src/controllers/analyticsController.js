@@ -129,6 +129,7 @@ const getChartData = async (req, res, next) => {
     const courseProviders = {};
     const degreeInstitutions = {};
     const certTrendByYear = {};
+    const industryMap = {};
 
     for (const p of profiles) {
       (p.certifications || []).forEach((c) => {
@@ -141,6 +142,7 @@ const getChartData = async (req, res, next) => {
       (p.employment || []).forEach((e) => {
         if (e?.jobTitle) jobTitles[e.jobTitle] = (jobTitles[e.jobTitle] || 0) + 1;
         if (e?.company) employers[e.company] = (employers[e.company] || 0) + 1;
+        if (e?.industry) industryMap[e.industry] = (industryMap[e.industry] || 0) + 1;
       });
 
       (p.courses || []).forEach((c) => {
@@ -166,7 +168,7 @@ const getChartData = async (req, res, next) => {
     res.json({
       skillsGap,
       certificationTrend: trend,
-      topIssuingBodies: byMapTop(issuingBodies, 10),
+      employmentByIndustry: byMapTop(industryMap, 10),
       commonJobTitles: byMapTop(jobTitles, 10),
       topEmployers: byMapTop(employers, 10),
       topCourseProviders: byMapTop(courseProviders, 10),

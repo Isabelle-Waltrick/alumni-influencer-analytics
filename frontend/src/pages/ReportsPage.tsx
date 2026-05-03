@@ -138,11 +138,11 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       sectionHeader('Alumni')
       doc.setFont('helvetica', 'bold')
       const cols = [
-        { label: 'Name',        x: 14,  width: 30 },
-        { label: 'Latest role', x: 60,  width: 28 },
-        { label: 'Company',     x: 100, width: 22 },
-        { label: 'Top cert',    x: 138, width: 28 },
-        { label: 'C/Co/D',      x: 184, width: 12 },
+        { label: 'Name', x: 14, width: 30 },
+        { label: 'Latest role', x: 60, width: 28 },
+        { label: 'Company', x: 100, width: 22 },
+        { label: 'Top cert', x: 138, width: 28 },
+        { label: 'C/Co/D', x: 184, width: 12 },
       ]
       cols.forEach((c) => doc.text(c.label, c.x, y))
       y += 1
@@ -180,9 +180,9 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       sectionHeader('Most Common Job Titles')
       writeList(charts.commonJobTitles.map((x) => ({ left: x.label, right: `${x.value} alumni` })))
     }
-    if (charts?.topIssuingBodies?.length) {
-      sectionHeader('Top Certification Issuing Bodies')
-      writeList(charts.topIssuingBodies.map((x) => ({ left: x.label, right: x.value })))
+    if (charts?.employmentByIndustry?.length) {
+      sectionHeader('Employment by Industry Sector')
+      writeList(charts.employmentByIndustry.map((x: { label: string; value: number }) => ({ left: x.label, right: x.value })))
     }
     if (charts?.topCourseProviders?.length) {
       sectionHeader('Top Course Providers')
