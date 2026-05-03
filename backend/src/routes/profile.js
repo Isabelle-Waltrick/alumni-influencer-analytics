@@ -608,6 +608,7 @@ router.delete('/courses/:itemId', courses.remove);
 const employmentValidation = [
   body('jobTitle').trim().notEmpty().withMessage('Job title is required'),
   body('company').trim().notEmpty().withMessage('Company name is required'),
+  body('industry').trim().notEmpty().withMessage('Industry is required'),
   body('startDate').isISO8601().withMessage('Start date must be a valid date'),
   body('endDate')
     .optional({ nullable: true })
@@ -632,6 +633,7 @@ const employmentValidation = [
  *             required:
  *               - jobTitle
  *               - company
+ *               - industry
  *               - startDate
  *             properties:
  *               jobTitle:
@@ -640,6 +642,9 @@ const employmentValidation = [
  *               company:
  *                 type: string
  *                 example: Google
+ *               industry:
+ *                 type: string
+ *                 example: Technology
  *               startDate:
  *                 type: string
  *                 format: date
@@ -678,6 +683,8 @@ router.post('/employment', employmentValidation, validate, employment.add);
  *               jobTitle:
  *                 type: string
  *               company:
+ *                 type: string
+ *               industry:
  *                 type: string
  *               startDate:
  *                 type: string

@@ -1,276 +1,292 @@
 <%- include('../partials/head', { title: 'My Profile' }) %>
-<%- include('../partials/navbar') %>
+  <%- include('../partials/navbar') %>
 
-<div class="container pb-5">
+    <div class="container pb-5">
 
-  <!-- Completion bar -->
-  <div class="card section-card p-3">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-      <span class="fw-semibold">Profile Completion</span>
-      <span id="pctLabel" class="fw-bold text-success">0%</span>
-    </div>
-    <div class="progress completion-bar">
-      <div id="pctBar" class="progress-bar bg-success" style="width:0%"></div>
-    </div>
-    <div id="pctBreakdown" class="mt-2 d-flex flex-wrap gap-2 small"></div>
-  </div>
-
-  <!-- Personal info -->
-  <div class="card section-card p-4">
-    <h5 class="fw-bold mb-3">Personal Information</h5>
-    <form id="infoForm" enctype="multipart/form-data">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label">First name</label>
-          <input class="form-control" id="firstName" name="firstName" />
+      <!-- Completion bar -->
+      <div class="card section-card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="fw-semibold">Profile Completion</span>
+          <span id="pctLabel" class="fw-bold text-success">0%</span>
         </div>
-        <div class="col-md-6">
-          <label class="form-label">Last name</label>
-          <input class="form-control" id="lastName" name="lastName" />
+        <div class="progress completion-bar">
+          <div id="pctBar" class="progress-bar bg-success" style="width:0%"></div>
         </div>
-        <div class="col-12">
-          <label class="form-label">Bio</label>
-          <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="1000"></textarea>
-        </div>
-        <div class="col-12">
-          <label class="form-label">LinkedIn URL</label>
-          <input class="form-control" id="linkedInUrl" name="linkedInUrl" placeholder="https://linkedin.com/in/yourname" />
-        </div>
-      </div>
-      <button type="submit" class="btn btn-dark mt-3">Save</button>
-    </form>
-  </div>
-
-  <!-- Profile image -->
-  <div class="card section-card p-4">
-    <h5 class="fw-bold mb-3">Profile Image</h5>
-    <div class="d-flex align-items-center gap-3">
-      <img id="profileImg" src="/uploads/placeholder.png" class="rounded-circle"
-           style="width:80px;height:80px;object-fit:cover;background:#eee"
-           onerror="this.src='https://ui-avatars.com/api/?size=80&background=6c757d&color=fff'" />
-      <div>
-        <input type="file" class="form-control" id="imageInput" accept="image/jpeg,image/png,image/webp" />
-        <div class="form-text">JPEG, PNG or WebP — max 5 MB</div>
-      </div>
-    </div>
-    <button class="btn btn-dark mt-3" id="uploadImgBtn">Upload</button>
-  </div>
-
-  <!-- Sub-document tabs -->
-  <div class="card section-card">
-    <div class="card-header p-0">
-      <ul class="nav nav-tabs border-0" id="profileTabs">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-degrees">Degrees</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-certs">Certifications</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-licences">Licences</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-courses">Courses</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-employment">Employment</button></li>
-      </ul>
-    </div>
-    <div class="card-body tab-content p-4">
-
-      <!-- Degrees -->
-      <div class="tab-pane fade show active" id="tab-degrees">
-        <div id="degreesList" class="mb-3"></div>
-        <h6 class="fw-semibold">Add Degree</h6>
-        <form class="sub-form" data-section="degrees">
-          <div class="row g-2">
-            <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
-            <div class="col-md-5"><input class="form-control" name="institution" placeholder="Institution *" required /></div>
-            <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to degree page" /></div>
-            <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100" type="submit">Add</button></div>
-          </div>
-        </form>
+        <div id="pctBreakdown" class="mt-2 d-flex flex-wrap gap-2 small"></div>
       </div>
 
-      <!-- Certifications -->
-      <div class="tab-pane fade" id="tab-certs">
-        <div id="certificationsList" class="mb-3"></div>
-        <h6 class="fw-semibold">Add Certification</h6>
-        <form class="sub-form" data-section="certifications">
-          <div class="row g-2">
-            <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
-            <div class="col-md-5"><input class="form-control" name="issuingBody" placeholder="Issuing body" /></div>
-            <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to certification" /></div>
-            <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100" type="submit">Add</button></div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Licences -->
-      <div class="tab-pane fade" id="tab-licences">
-        <div id="licencesList" class="mb-3"></div>
-        <h6 class="fw-semibold">Add Licence</h6>
-        <form class="sub-form" data-section="licences">
-          <div class="row g-2">
-            <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
-            <div class="col-md-5"><input class="form-control" name="awardingBody" placeholder="Awarding body" /></div>
-            <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to awarding body" /></div>
-            <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100" type="submit">Add</button></div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Courses -->
-      <div class="tab-pane fade" id="tab-courses">
-        <div id="coursesList" class="mb-3"></div>
-        <h6 class="fw-semibold">Add Course</h6>
-        <form class="sub-form" data-section="courses">
-          <div class="row g-2">
-            <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
-            <div class="col-md-5"><input class="form-control" name="provider" placeholder="Provider" /></div>
-            <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to course" /></div>
-            <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100" type="submit">Add</button></div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Employment -->
-      <div class="tab-pane fade" id="tab-employment">
-        <div id="employmentList" class="mb-3"></div>
-        <h6 class="fw-semibold">Add Employment</h6>
-        <form class="sub-form" data-section="employment">
-          <div class="row g-2">
-            <div class="col-md-5"><input class="form-control" name="jobTitle" placeholder="Job title *" required /></div>
-            <div class="col-md-5"><input class="form-control" name="company" placeholder="Company *" required /></div>
-            <div class="col-md-4">
-              <label class="form-label small mb-1">Start date *</label>
-              <input class="form-control" type="date" name="startDate" required />
+      <!-- Personal info -->
+      <div class="card section-card p-4">
+        <h5 class="fw-bold mb-3">Personal Information</h5>
+        <form id="infoForm" enctype="multipart/form-data">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First name</label>
+              <input class="form-control" id="firstName" name="firstName" />
             </div>
-            <div class="col-md-4">
-              <label class="form-label small mb-1">End date (leave blank if current)</label>
-              <input class="form-control" type="date" name="endDate" />
+            <div class="col-md-6">
+              <label class="form-label">Last name</label>
+              <input class="form-control" id="lastName" name="lastName" />
             </div>
-            <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100" type="submit">Add</button></div>
+            <div class="col-12">
+              <label class="form-label">Bio</label>
+              <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="1000"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">LinkedIn URL</label>
+              <input class="form-control" id="linkedInUrl" name="linkedInUrl"
+                placeholder="https://linkedin.com/in/yourname" />
+            </div>
           </div>
+          <button type="submit" class="btn btn-dark mt-3">Save</button>
         </form>
       </div>
 
+      <!-- Profile image -->
+      <div class="card section-card p-4">
+        <h5 class="fw-bold mb-3">Profile Image</h5>
+        <div class="d-flex align-items-center gap-3">
+          <img id="profileImg" src="/uploads/placeholder.png" class="rounded-circle"
+            style="width:80px;height:80px;object-fit:cover;background:#eee"
+            onerror="this.src='https://ui-avatars.com/api/?size=80&background=6c757d&color=fff'" />
+          <div>
+            <input type="file" class="form-control" id="imageInput" accept="image/jpeg,image/png,image/webp" />
+            <div class="form-text">JPEG, PNG or WebP — max 5 MB</div>
+          </div>
+        </div>
+        <button class="btn btn-dark mt-3" id="uploadImgBtn">Upload</button>
+      </div>
+
+      <!-- Sub-document tabs -->
+      <div class="card section-card">
+        <div class="card-header p-0">
+          <ul class="nav nav-tabs border-0" id="profileTabs">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab"
+                data-bs-target="#tab-degrees">Degrees</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                data-bs-target="#tab-certs">Certifications</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                data-bs-target="#tab-licences">Licences</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                data-bs-target="#tab-courses">Courses</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab"
+                data-bs-target="#tab-employment">Employment</button></li>
+          </ul>
+        </div>
+        <div class="card-body tab-content p-4">
+
+          <!-- Degrees -->
+          <div class="tab-pane fade show active" id="tab-degrees">
+            <div id="degreesList" class="mb-3"></div>
+            <h6 class="fw-semibold">Add Degree</h6>
+            <form class="sub-form" data-section="degrees">
+              <div class="row g-2">
+                <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
+                <div class="col-md-5"><input class="form-control" name="institution" placeholder="Institution *"
+                    required /></div>
+                <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to degree page" /></div>
+                <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
+                <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100"
+                    type="submit">Add</button></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Certifications -->
+          <div class="tab-pane fade" id="tab-certs">
+            <div id="certificationsList" class="mb-3"></div>
+            <h6 class="fw-semibold">Add Certification</h6>
+            <form class="sub-form" data-section="certifications">
+              <div class="row g-2">
+                <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
+                <div class="col-md-5"><input class="form-control" name="issuingBody" placeholder="Issuing body" /></div>
+                <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to certification" /></div>
+                <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
+                <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100"
+                    type="submit">Add</button></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Licences -->
+          <div class="tab-pane fade" id="tab-licences">
+            <div id="licencesList" class="mb-3"></div>
+            <h6 class="fw-semibold">Add Licence</h6>
+            <form class="sub-form" data-section="licences">
+              <div class="row g-2">
+                <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
+                <div class="col-md-5"><input class="form-control" name="awardingBody" placeholder="Awarding body" />
+                </div>
+                <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to awarding body" /></div>
+                <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
+                <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100"
+                    type="submit">Add</button></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Courses -->
+          <div class="tab-pane fade" id="tab-courses">
+            <div id="coursesList" class="mb-3"></div>
+            <h6 class="fw-semibold">Add Course</h6>
+            <form class="sub-form" data-section="courses">
+              <div class="row g-2">
+                <div class="col-md-5"><input class="form-control" name="title" placeholder="Title *" required /></div>
+                <div class="col-md-5"><input class="form-control" name="provider" placeholder="Provider" /></div>
+                <div class="col-md-4"><input class="form-control" name="url" placeholder="URL to course" /></div>
+                <div class="col-md-4"><input class="form-control" type="date" name="completionDate" /></div>
+                <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100"
+                    type="submit">Add</button></div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Employment -->
+          <div class="tab-pane fade" id="tab-employment">
+            <div id="employmentList" class="mb-3"></div>
+            <h6 class="fw-semibold">Add Employment</h6>
+            <form class="sub-form" data-section="employment">
+              <div class="row g-2">
+                <div class="col-md-4"><input class="form-control" name="jobTitle" placeholder="Job title *" required />
+                </div>
+                <div class="col-md-4"><input class="form-control" name="company" placeholder="Company *" required />
+                </div>
+                <div class="col-md-4"><input class="form-control" name="industry" placeholder="Industry *" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small mb-1">Start date *</label>
+                  <input class="form-control" type="date" name="startDate" required />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label small mb-1">End date (leave blank if current)</label>
+                  <input class="form-control" type="date" name="endDate" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end"><button class="btn btn-dark w-100"
+                    type="submit">Add</button></div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<script>
-// ─── Load profile on page ready ────────────────────────────────────────────────
-async function loadProfile() {
-  const profile = await api.get('/api/profile/me');
-  document.getElementById('firstName').value = profile.firstName || '';
-  document.getElementById('lastName').value = profile.lastName || '';
-  document.getElementById('bio').value = profile.bio || '';
-  document.getElementById('linkedInUrl').value = profile.linkedInUrl || '';
-  if (profile.profileImagePath) {
-    document.getElementById('profileImg').src = profile.profileImagePath;
-  }
-  renderList('degrees', profile.degrees, ['title','institution','url','completionDate']);
-  renderList('certifications', profile.certifications, ['title','issuingBody','url','completionDate']);
-  renderList('licences', profile.licences, ['title','awardingBody','url','completionDate']);
-  renderList('courses', profile.courses, ['title','provider','url','completionDate']);
-  renderList('employment', profile.employment, ['jobTitle','company','startDate','endDate']);
-  loadCompletion();
-}
+    <script>
+      // ─── Load profile on page ready ────────────────────────────────────────────────
+      async function loadProfile() {
+        const profile = await api.get('/api/profile/me');
+        document.getElementById('firstName').value = profile.firstName || '';
+        document.getElementById('lastName').value = profile.lastName || '';
+        document.getElementById('bio').value = profile.bio || '';
+        document.getElementById('linkedInUrl').value = profile.linkedInUrl || '';
+        if (profile.profileImagePath) {
+          document.getElementById('profileImg').src = profile.profileImagePath;
+        }
+        renderList('degrees', profile.degrees, ['title', 'institution', 'url', 'completionDate']);
+        renderList('certifications', profile.certifications, ['title', 'issuingBody', 'url', 'completionDate']);
+        renderList('licences', profile.licences, ['title', 'awardingBody', 'url', 'completionDate']);
+        renderList('courses', profile.courses, ['title', 'provider', 'url', 'completionDate']);
+        renderList('employment', profile.employment, ['jobTitle', 'company', 'industry', 'startDate', 'endDate']);
+        loadCompletion();
+      }
 
-// ─── Completion bar ────────────────────────────────────────────────────────────
-async function loadCompletion() {
-  const data = await api.get('/api/profile/completion');
-  document.getElementById('pctLabel').textContent = data.percentage + '%';
-  document.getElementById('pctBar').style.width = data.percentage + '%';
-  const breakdown = document.getElementById('pctBreakdown');
-  breakdown.innerHTML = '';
-  for (const [key, done] of Object.entries(data.breakdown || {})) {
-    const badge = document.createElement('span');
-    badge.className = `badge ${done ? 'bg-success' : 'bg-secondary'}`;
-    badge.textContent = key;
-    breakdown.appendChild(badge);
-  }
-}
+      // ─── Completion bar ────────────────────────────────────────────────────────────
+      async function loadCompletion() {
+        const data = await api.get('/api/profile/completion');
+        document.getElementById('pctLabel').textContent = data.percentage + '%';
+        document.getElementById('pctBar').style.width = data.percentage + '%';
+        const breakdown = document.getElementById('pctBreakdown');
+        breakdown.innerHTML = '';
+        for (const [key, done] of Object.entries(data.breakdown || {})) {
+          const badge = document.createElement('span');
+          badge.className = `badge ${done ? 'bg-success' : 'bg-secondary'}`;
+          badge.textContent = key;
+          breakdown.appendChild(badge);
+        }
+      }
 
-// ─── Render a sub-document list ────────────────────────────────────────────────
-function renderList(section, items, fields) {
-  const el = document.getElementById(section + 'List');
-  if (!items || items.length === 0) {
-    el.innerHTML = '<p class="text-muted small">None added yet.</p>';
-    return;
-  }
-  el.innerHTML = items.map(item => `
+      // ─── Render a sub-document list ────────────────────────────────────────────────
+      function renderList(section, items, fields) {
+        const el = document.getElementById(section + 'List');
+        if (!items || items.length === 0) {
+          el.innerHTML = '<p class="text-muted small">None added yet.</p>';
+          return;
+        }
+        el.innerHTML = items.map(item => `
     <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2">
       <div class="small">
-        ${fields.map(f => item[f] ? `<span><strong>${f}:</strong> ${
-          f.toLowerCase().includes('url') && item[f]
+        ${fields.map(f => item[f] ? `<span><strong>${f}:</strong> ${f.toLowerCase().includes('url') && item[f]
             ? `<a href="${item[f]}" target="_blank">${item[f]}</a>`
             : item[f]
-        }</span> ` : '').join('')}
+          }</span> ` : '').join('')}
       </div>
       <button class="btn btn-sm btn-outline-danger ms-2 flex-shrink-0"
               onclick="deleteItem('${section}','${item._id}')">Remove</button>
     </div>`).join('');
-}
+      }
 
-// ─── Delete a sub-document item ────────────────────────────────────────────────
-async function deleteItem(section, itemId) {
-  const { status, data } = await api.del(`/api/profile/${section}/${itemId}`);
-  if (status === 200) {
-    toast('Removed successfully.');
-    loadProfile();
-  } else {
-    toast(data.message || 'Failed to remove.', 'danger');
-  }
-}
+      // ─── Delete a sub-document item ────────────────────────────────────────────────
+      async function deleteItem(section, itemId) {
+        const { status, data } = await api.del(`/api/profile/${section}/${itemId}`);
+        if (status === 200) {
+          toast('Removed successfully.');
+          loadProfile();
+        } else {
+          toast(data.message || 'Failed to remove.', 'danger');
+        }
+      }
 
-// ─── Save personal info ─────────────────────────────────────────────────────────
-document.getElementById('infoForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const { status, data } = await api.put('/api/profile/me', {
-    firstName: document.getElementById('firstName').value,
-    lastName: document.getElementById('lastName').value,
-    bio: document.getElementById('bio').value,
-    linkedInUrl: document.getElementById('linkedInUrl').value,
-  });
-  if (status === 200) {
-    toast('Profile saved.');
-    loadCompletion();
-  } else {
-    toast(data.errors?.[0]?.msg || data.message || 'Save failed.', 'danger');
-  }
-});
+      // ─── Save personal info ─────────────────────────────────────────────────────────
+      document.getElementById('infoForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const { status, data } = await api.put('/api/profile/me', {
+          firstName: document.getElementById('firstName').value,
+          lastName: document.getElementById('lastName').value,
+          bio: document.getElementById('bio').value,
+          linkedInUrl: document.getElementById('linkedInUrl').value,
+        });
+        if (status === 200) {
+          toast('Profile saved.');
+          loadCompletion();
+        } else {
+          toast(data.errors?.[0]?.msg || data.message || 'Save failed.', 'danger');
+        }
+      });
 
-// ─── Upload image ───────────────────────────────────────────────────────────────
-document.getElementById('uploadImgBtn').addEventListener('click', async () => {
-  const file = document.getElementById('imageInput').files[0];
-  if (!file) { toast('Select an image first.', 'warning'); return; }
-  const form = new FormData();
-  form.append('image', file);
-  const { status, data } = await api.postForm('/api/profile/image', form);
-  if (status === 200) {
-    document.getElementById('profileImg').src = data.profileImagePath;
-    toast('Image updated.');
-    loadCompletion();
-  } else {
-    toast(data.message || 'Upload failed.', 'danger');
-  }
-});
+      // ─── Upload image ───────────────────────────────────────────────────────────────
+      document.getElementById('uploadImgBtn').addEventListener('click', async () => {
+        const file = document.getElementById('imageInput').files[0];
+        if (!file) { toast('Select an image first.', 'warning'); return; }
+        const form = new FormData();
+        form.append('image', file);
+        const { status, data } = await api.postForm('/api/profile/image', form);
+        if (status === 200) {
+          document.getElementById('profileImg').src = data.profileImagePath;
+          toast('Image updated.');
+          loadCompletion();
+        } else {
+          toast(data.message || 'Upload failed.', 'danger');
+        }
+      });
 
-// ─── Add sub-document via any .sub-form ────────────────────────────────────────
-document.querySelectorAll('.sub-form').forEach(form => {
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const section = form.dataset.section;
-    const body = {};
-    new FormData(form).forEach((v, k) => { if (v) body[k] = v; });
-    const { status, data } = await api.post(`/api/profile/${section}`, body);
-    if (status === 201) {
-      toast('Added successfully.');
-      form.reset();
+      // ─── Add sub-document via any .sub-form ────────────────────────────────────────
+      document.querySelectorAll('.sub-form').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const section = form.dataset.section;
+          const body = {};
+          new FormData(form).forEach((v, k) => { if (v) body[k] = v; });
+          const { status, data } = await api.post(`/api/profile/${section}`, body);
+          if (status === 201) {
+            toast('Added successfully.');
+            form.reset();
+            loadProfile();
+          } else {
+            toast(data.errors?.[0]?.msg || data.message || 'Failed to add.', 'danger');
+          }
+        });
+      });
+
       loadProfile();
-    } else {
-      toast(data.errors?.[0]?.msg || data.message || 'Failed to add.', 'danger');
-    }
-  });
-});
-
-loadProfile();
-</script>
-<%- include('../partials/foot') %>
+    </script>
+    <%- include('../partials/foot') %>

@@ -33,6 +33,7 @@ const courseSchema = new mongoose.Schema({
 const employmentSchema = new mongoose.Schema({
   jobTitle: { type: String, required: true, trim: true },
   company: { type: String, required: true, trim: true },
+  industry: { type: String, required: true, trim: true },
   startDate: { type: Date, required: true },
   endDate: { type: Date, default: null }, // null means currently working there
 });
