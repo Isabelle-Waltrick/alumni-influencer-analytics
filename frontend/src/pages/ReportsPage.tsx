@@ -188,9 +188,9 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       sectionHeader('Top Course Providers')
       writeList(charts.topCourseProviders.map((x) => ({ left: x.label, right: x.value })))
     }
-    if (charts?.topDegreeInstitutions?.length) {
-      sectionHeader('Top Degree Institutions')
-      writeList(charts.topDegreeInstitutions.map((x) => ({ left: x.label, right: x.value })))
+    if (charts?.geographicDistribution?.length) {
+      sectionHeader('Geographic Distribution')
+      writeList(charts.geographicDistribution.map((x) => ({ left: x.label, right: x.value })))
     }
     if (charts?.certificationTrend?.length) {
       sectionHeader('Certification Trend by Year')

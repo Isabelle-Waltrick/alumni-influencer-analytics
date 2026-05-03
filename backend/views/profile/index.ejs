@@ -32,7 +32,23 @@
               <label class="form-label">Bio</label>
               <textarea class="form-control" id="bio" name="bio" rows="3" maxlength="1000"></textarea>
             </div>
-            <div class="col-12">
+            <div class="col-md-6">
+              <label class="form-label">Location</label>
+              <select class="form-select" id="currentCountry" name="currentCountry">
+                <option value="">Select location…</option>
+                <option value="London">London</option>
+                <option value="South East">South East</option>
+                <option value="North West">North West</option>
+                <option value="Scotland">Scotland</option>
+                <option value="Midlands">Midlands</option>
+                <option value="South West">South West</option>
+                <option value="Europe">Europe</option>
+                <option value="North America">North America</option>
+                <option value="Asia">Asia</option>
+                <option value="Middle East">Middle East</option>
+              </select>
+            </div>
+            <div class="col-md-6">
               <label class="form-label">LinkedIn URL</label>
               <input class="form-control" id="linkedInUrl" name="linkedInUrl"
                 placeholder="https://linkedin.com/in/yourname" />
@@ -179,6 +195,7 @@
         document.getElementById('lastName').value = profile.lastName || '';
         document.getElementById('bio').value = profile.bio || '';
         document.getElementById('linkedInUrl').value = profile.linkedInUrl || '';
+        document.getElementById('currentCountry').value = profile.currentCountry || '';
         if (profile.profileImagePath) {
           document.getElementById('profileImg').src = profile.profileImagePath;
         }
@@ -254,6 +271,7 @@
           lastName: document.getElementById('lastName').value,
           bio: document.getElementById('bio').value,
           linkedInUrl: document.getElementById('linkedInUrl').value,
+          currentCountry: document.getElementById('currentCountry').value,
         });
         if (status === 200) {
           toast('Profile saved.');

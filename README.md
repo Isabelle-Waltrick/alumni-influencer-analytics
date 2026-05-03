@@ -324,7 +324,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 2. **Register & verify alumnus** at `http://localhost:3000/register` (Account type: Alumnus). Open Mailtrap, click verify link.
 3. **Log in as alumnus**, on `/profile`:
    - Fill personal info + LinkedIn URL
-   - Add 2 degrees, 3 certifications (with `issuingBody` and `completionDate` populated), 2 courses (with `provider`), 2 employment rows (with `jobTitle` + `company` + `startDate`)
+   - Add 2 degrees, 3 certifications (with `issuingBody` and `completionDate` populated), 2 courses (with `provider`), 2 employment rows (with `jobTitle` + `company` + `industry` + `startDate`)
    - Upload a profile image
    - On `/bidding`, place a bid (£50)
 4. **Optional — second alumnus** with overlapping certs (e.g. AWS + Docker) to make charts non-trivial.
@@ -380,7 +380,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 | Rubric line item | Implementation | Marks |
 |---|---|---|
 | Professional dashboard, intuitive nav, responsive, loading states | [App.tsx — `AppShell`](frontend/src/App.tsx) sidebar; loading flags in `useAnalytics`; status panel in Reports | 5 |
-| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | Bar, Line, Pie, Doughnut, Horizontal Bar, Radar, Polar Area = **7 charts**; severity colors on Skills Gap; all live from `/api/analytics/charts` | 30 |
+| 6–8 chart types from API, interactive tooltips/legends, color-coded, animations | **7 charts** total (Bar, Line, Pie, Doughnut, Horizontal Bar, Radar + Radar for Geographic Distribution); severity colors on Skills Gap; all live from `/api/analytics/charts` | 30 |
 | CSV/PDF export, custom reports, filter presets, downloadable chart images | `ReportsPage`: Papa CSV + jsPDF multi-page report + `localStorage` presets with named save/load/delete; manual canvas composition for chart image | 5 |
 | Granular permissions enforced on all endpoints, different keys for different clients, 403 unauthorized | `requireApiScope` middleware; AR vs Analytics keys testable on `/developer`; 403 `requiredAnyOf` body | 5 |
 | Bcrypt + password strength | Same as CW1 | 2.5 |
@@ -408,7 +408,7 @@ For the viva, run through these in order. Total time ~6 minutes.
 These are intentional simplifications, called out so they're not surprises in the viva:
 
 1. **University-domain validation is not enforced** ([User.js:11](backend/src/models/User.js)) — comment says "domain validation will be added in a later iteration". CW1 brief mandates this; addressing it would be a one-line regex in the email validator.
-2. **`programme`, `industrySector`, `currentCountry`, `graduationDate`** fields exist in `Profile` but are not exposed on the EJS profile form. The dashboard's filter and chart set was therefore aligned to sub-array fields (certifications, employment, courses, degrees) which the form *does* capture.
+2. **`programme`, `industrySector`, `currentCountry`, `graduationDate`** fields exist in `Profile` but are not exposed on the EJS profile form. Note: `employment.industry` (per-role industry) *is* captured in the Employment tab and powers the Employment by Industry Sector chart.
 3. **`hasEventBonus` is not toggled by any UI** — the field exists for the 4th-bid bonus but no flow flips it. A future admin endpoint or attendance webhook would set it.
 4. **No frontend tests / no backend tests** — this is a coursework prototype. Validation lives in `express-validator` chains and Mongoose schema validation.
 5. **CSP allows `'unsafe-inline'`** ([app.js:30-32](backend/src/app.js)) — required because the EJS pages have inline `<script>` blocks. Tightening would require extracting all page scripts and adding nonces.

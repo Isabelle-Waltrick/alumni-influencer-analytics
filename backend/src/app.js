@@ -58,10 +58,17 @@ app.use(session({
   },
 }));
 
-// rate limiting on auth endpoints to stop brute force
+// rate limiting on sensitive auth endpoints to stop brute force
+// while keeping local development usable.
+const authWindowMs = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const authMax = Number(
+  process.env.AUTH_RATE_LIMIT_MAX || (process.env.NODE_ENV === 'production' ? 20 : 200)
+);
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
+  windowMs: authWindowMs,
+  max: authMax,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { message: 'Too many requests, please try again later' },
 });
 
@@ -81,7 +88,11 @@ app.get('/api/csrf-token', csrfIfEnabled, (req, res) => {
   return res.json({ csrfEnabled: true, csrfToken: req.csrfToken() });
 });
 
-app.use('/api/auth', csrfIfEnabled, authLimiter, authRoutes);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth', csrfIfEnabled, authRoutes);
 app.use('/api/profile', csrfIfEnabled, profileRoutes);
 app.use('/api/bids', csrfIfEnabled, biddingRoutes);
 app.use('/api/developer', csrfIfEnabled, developerRoutes);

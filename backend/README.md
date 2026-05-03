@@ -180,7 +180,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(session({ ...httpOnly, secure in prod, 24h maxAge... }));
 
-const authLimiter = rateLimit({ windowMs: 15min, max: 20 });
+const authLimiter = rateLimit({ windowMs: AUTH_RATE_LIMIT_WINDOW_MS, max: AUTH_RATE_LIMIT_MAX });
 const csrfIfEnabled = ...;     // gated by ENABLE_CSRF env
 ```
 
@@ -190,7 +190,11 @@ Then static and routes:
 app.use('/uploads', express.static('uploads'));            // profile images
 app.get('/api/csrf-token', csrfIfEnabled, ...);            // hands the CSRF token to JS clients
 
-app.use('/api/auth',      csrfIfEnabled, authLimiter, authRoutes);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth',      csrfIfEnabled,             authRoutes);
 app.use('/api/profile',   csrfIfEnabled,                profileRoutes);
 app.use('/api/bids',      csrfIfEnabled,                biddingRoutes);
 app.use('/api/developer', csrfIfEnabled,                developerRoutes);
@@ -245,7 +249,7 @@ All schemas use `{ timestamps: true }` so `createdAt` and `updatedAt` are presen
 | `programme` | String, default `''` | Reserved — not currently exposed in EJS form |
 | `graduationDate` | Date, nullable | Reserved — not currently in EJS form |
 | `industrySector` | String, default `''` | Reserved — not currently in EJS form |
-| `currentCountry` | String, default `''` | Reserved — not currently in EJS form |
+| `currentCountry` | String, default `''` | Captured in EJS as Location dropdown (10 fixed regions) |
 | `isActiveToday` | Boolean, default false | Set by midnight cron when this profile wins |
 | `monthlyWins` | Number, default 0 | Resets implicitly at start of each month |
 | `lastWinMonth` | Number 1–12, nullable | Used to detect month rollover |
@@ -254,7 +258,7 @@ All schemas use `{ timestamps: true }` so `createdAt` and `updatedAt` are presen
 | `certifications[]` | sub-doc array | `{ title, issuingBody, url, completionDate }` |
 | `licences[]` | sub-doc array | `{ title, awardingBody, url, completionDate }` |
 | `courses[]` | sub-doc array | `{ title, provider, url, completionDate }` |
-| `employment[]` | sub-doc array | `{ jobTitle, company, startDate, endDate? }` |
+| `employment[]` | sub-doc array | `{ jobTitle, company, industry, startDate, endDate? }` |
 
 **Methods**:
 
@@ -367,7 +371,7 @@ CSRF: enforced when `ENABLE_CSRF=true`. Rate limit: 20 requests / 15 min per IP.
 | `POST/PUT/DELETE` | `/certifications/:itemId?` | `{ title, issuingBody?, url?, completionDate? }` | Duplicate on `(title)`. |
 | `POST/PUT/DELETE` | `/licences/:itemId?` | `{ title, awardingBody?, url?, completionDate? }` | Duplicate on `(title)`. |
 | `POST/PUT/DELETE` | `/courses/:itemId?` | `{ title, provider?, url?, completionDate? }` | Duplicate on `(title)`. |
-| `POST/PUT/DELETE` | `/employment/:itemId?` | `{ jobTitle, company, startDate, endDate? }` | Duplicate on `(jobTitle, company)`. |
+| `POST/PUT/DELETE` | `/employment/:itemId?` | `{ jobTitle, company, industry, startDate, endDate? }` | Duplicate on `(jobTitle, company)`. |
 
 ### Bidding — `/api/bids/*` (alumnus only, session-required)
 
@@ -397,7 +401,7 @@ CSRF: enforced when `ENABLE_CSRF=true`. Rate limit: 20 requests / 15 min per IP.
 |---|---|---|---|---|
 | `GET` | `/alumni` | `read:alumni` OR `read:analytics` | certification, company, jobTitle, certYearFrom, certYearTo | Returns `{ count, items[] }`. Each item is a derived row with latestJobTitle, latestCompany, topCertification, certificationsCount, etc. |
 | `GET` | `/summary` | `read:analytics` | same | `{ totalAlumniTracked, employmentRate, avgCertificationsPerAlumnus }` |
-| `GET` | `/charts` | `read:analytics` | same | `{ skillsGap, certificationTrend, topIssuingBodies, commonJobTitles, topEmployers, topCourseProviders, topDegreeInstitutions }` |
+| `GET` | `/charts` | `read:analytics` | same | `{ skillsGap, certificationTrend, employmentByIndustry, commonJobTitles, topEmployers, topCourseProviders, geographicDistribution }` |
 | `GET` | `/donations-summary` | `read:donations` | same | `{ featuredWins, totalSponsoredAmount, averageSponsoredAmount }` — built from `FeaturedAlumni.winningBidAmount` |
 
 ### Public — `/api/public/*`
@@ -750,7 +754,7 @@ curl -H "Authorization: Bearer ak_xxx" \
 - [x] `helmet()` with custom CSP that allows the Bootstrap CDN
 - [x] CORS limited to `CLIENT_ORIGIN`, `credentials: true`
 - [x] CSRF available (`ENABLE_CSRF=true` recommended in production)
-- [x] Rate limit on `/api/auth/*` (20 / 15min) and per-key on `/api/public/*` (configurable)
+- [x] Rate limit on sensitive auth write routes (`/api/auth/login`, `/register`, `/forgot-password`, `/reset-password`) with env tuning (`AUTH_RATE_LIMIT_WINDOW_MS`, `AUTH_RATE_LIMIT_MAX`) and per-key on `/api/public/*` (configurable)
 - [x] `express-validator` on every request body / query / param that takes user input
 - [x] Mongoose schema-level validation as a second layer
 - [x] User input never interpolated into queries — Mongoose object-builders escape

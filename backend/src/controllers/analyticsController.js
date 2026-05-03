@@ -107,13 +107,12 @@ const getSummary = async (req, res, next) => {
 };
 
 // GET /api/analytics/charts
-// All aggregations are derived from sub-document arrays the EJS profile UI
-// actually populates: certifications, courses, employment, degrees.
+// Aggregations are derived from profile fields captured by the EJS profile UI.
 const getChartData = async (req, res, next) => {
   try {
     const filter = buildProfileFilter(req.query);
     const profiles = await Profile.find(filter).select(
-      'certifications courses employment degrees'
+      'certifications courses employment currentCountry'
     );
 
     const byMapTop = (mapObj, top = 10) =>
@@ -127,9 +126,22 @@ const getChartData = async (req, res, next) => {
     const jobTitles = {};
     const employers = {};
     const courseProviders = {};
-    const degreeInstitutions = {};
     const certTrendByYear = {};
     const industryMap = {};
+    const geoLabels = [
+      'London',
+      'South East',
+      'North West',
+      'Scotland',
+      'Midlands',
+      'South West',
+      'Europe',
+      'North America',
+      'Asia',
+      'Middle East',
+    ];
+    const geoCounts = Object.fromEntries(geoLabels.map((label) => [label, 0]));
+    const geoLabelByLower = Object.fromEntries(geoLabels.map((label) => [label.toLowerCase(), label]));
 
     for (const p of profiles) {
       (p.certifications || []).forEach((c) => {
@@ -149,9 +161,11 @@ const getChartData = async (req, res, next) => {
         if (c?.provider) courseProviders[c.provider] = (courseProviders[c.provider] || 0) + 1;
       });
 
-      (p.degrees || []).forEach((d) => {
-        if (d?.institution) degreeInstitutions[d.institution] = (degreeInstitutions[d.institution] || 0) + 1;
-      });
+      if (p?.currentCountry) {
+        const normalized = String(p.currentCountry).trim().toLowerCase();
+        const canonical = geoLabelByLower[normalized];
+        if (canonical) geoCounts[canonical] += 1;
+      }
     }
 
     const total = profiles.length || 1;
@@ -172,7 +186,7 @@ const getChartData = async (req, res, next) => {
       commonJobTitles: byMapTop(jobTitles, 10),
       topEmployers: byMapTop(employers, 10),
       topCourseProviders: byMapTop(courseProviders, 10),
-      topDegreeInstitutions: byMapTop(degreeInstitutions, 10),
+      geographicDistribution: geoLabels.map((label) => ({ label, value: geoCounts[label] || 0 })),
     });
   } catch (err) {
     next(err);

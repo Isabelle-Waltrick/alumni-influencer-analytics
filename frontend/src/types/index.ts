@@ -25,7 +25,7 @@ export type ChartsResponse = {
   commonJobTitles: ChartItem[]
   topEmployers: ChartItem[]
   topCourseProviders: ChartItem[]
-  topDegreeInstitutions: ChartItem[]
+  geographicDistribution: ChartItem[]
 }
 
 export type AlumniRow = {

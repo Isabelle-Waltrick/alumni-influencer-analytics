@@ -43,7 +43,7 @@ Concretely, it provides:
 2. **Session-aware shell** — a fixed sidebar with navigation, current user email, logout, and an API-key textarea.
 3. **Dashboard page** — three KPI cards (Total Alumni / Employment Rate / Avg Certifications) computed live by the backend.
 4. **Alumni Explorer** — a filterable table of alumni with derived "latest job" / "top certification" / sub-array counts.
-5. **Charts page** — 7 chart types: Bar, Line, Pie, Doughnut, Horizontal Bar, Radar, Polar Area.
+5. **Charts page** — 7 charts (6 chart types): Bar, Line, Pie, Doughnut, Horizontal Bar, and Radar (used for both providers and geography).
 6. **Reports page** — CSV export, multi-page detailed PDF report, filter presets persisted to `localStorage`, downloadable composite chart image.
 7. **Defense-in-depth role guard** — alumni accounts cannot access the dashboard; if their session leaks in (e.g. they were also logged in on the EJS site at port 3000), the React app logs them out at three checkpoints.
 
@@ -259,11 +259,11 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 |---|---|---|---|
 | 1 | Skills Gap Analysis | Bar | `cert.title` (% of alumni) with severity color |
 | 2 | Certification Trend | Line | `cert.completionDate` year |
-| 3 | Top Issuing Bodies | Pie | `cert.issuingBody` |
+| 3 | Employment by Industry Sector | Pie | `employment.industry` |
 | 4 | Most Common Job Titles | Doughnut | `employment.jobTitle` |
 | 5 | Top Employers | Horizontal Bar | `employment.company` |
 | 6 | Top Course Providers | Radar | `course.provider` |
-| 7 | Top Degree Institutions | Polar Area | `degree.institution` |
+| 7 | Geographic Distribution | Radar | `currentCountry` (Location dropdown values) |
 
 ### `/reports` — Reports & Exports
 
@@ -360,9 +360,9 @@ monitor (else)     → palette[i % 5]  blue/green/etc.
 
 Tooltips, legends, hover behaviour are Chart.js defaults — no custom plugin code needed.
 
-### Why Polar spans both columns
+### Why Geographic Distribution spans both columns
 
-The polar area chart has notably more vertical space requirement than the others because its labels radiate outward. Giving it `md:col-span-2` keeps it readable.
+The geographic radar chart has noticeably larger label and ring footprint than the smaller cards. Giving it `md:col-span-2` keeps labels readable and avoids clipping.
 
 ---
 
@@ -389,9 +389,9 @@ A manually composed multi-page jsPDF report with:
 - Skills Gap (cert title + % + severity)
 - Top Employers (name + count)
 - Most Common Job Titles
-- Top Issuing Bodies
+- Employment by Industry Sector
 - Top Course Providers
-- Top Degree Institutions
+- Geographic Distribution
 - Certification Trend by Year
 - Page numbers (`Page X of Y`) on every page
 
@@ -518,7 +518,7 @@ Listed verbatim from [`package.json`](package.json):
 | Folder split (App.tsx + pages/ + components/ + hooks/ + lib/ + types/) | Standard React layout — one concern per file. `App.tsx` stays thin (routing + global state); each page, component, hook, and helper lives in its own file with explicit imports. |
 | Hardcoded `role: 'developer'` on register | The React app is for developer/analyst users; alumni register on the EJS site. Cross-role registration would confuse the audit story. |
 | Three layers of alumni blocking | "Defense in depth" — even if the backend session check returns an alumni user (e.g. shared cookie with the EJS site), the dashboard still bounces them at three points. |
-| Filters aligned to sub-array fields, not Profile root fields | The Profile model has `programme`, `industrySector`, `currentCountry` but the EJS form doesn't capture them. Aligning the dashboard to fields that *are* captured avoids charts that are silently always empty. |
+| Filters aligned to sub-array fields, with geography from captured root field | The dashboard filters are anchored to high-signal sub-arrays (certifications, courses, employment). `currentCountry` is now captured as a fixed Location dropdown and is used for Geographic Distribution. |
 | Manual canvas composition for chart image | Tailwind v4 emits `oklch()` colors that `html2canvas@1.4` can't parse. Painting `<canvas>` elements directly bypasses CSS interpretation entirely and works with any Tailwind version. |
 | `localStorage` only for presets, not API key | Demo safety — paste key, use, close tab, gone. No persistent token to risk leaking. |
 | Manual jsPDF layout (no jspdf-autotable) | One fewer dependency. The report is structured but uses simple positioned text — easy to read in code review. |

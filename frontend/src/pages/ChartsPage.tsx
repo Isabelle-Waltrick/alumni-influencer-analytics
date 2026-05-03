@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bar, Doughnut, Line, Pie, PolarArea, Radar } from 'react-chartjs-2'
+import { Bar, Doughnut, Line, Pie, Radar } from 'react-chartjs-2'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
@@ -86,7 +86,30 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value) }] }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Top Course Providers (Radar)</h3><Radar data={{ labels: charts.topCourseProviders.map((x) => x.label), datasets: [{ label: 'Count', data: charts.topCourseProviders.map((x) => x.value), backgroundColor: 'rgba(59,130,246,0.2)', borderColor: '#3B82F6' }] }} /></div>
-          <div className="rounded-lg border bg-white p-4 md:col-span-2"><h3 className="mb-3 text-sm font-semibold">Top Degree Institutions (Polar Area)</h3><PolarArea data={{ labels: charts.topDegreeInstitutions.map((x) => x.label), datasets: [{ data: charts.topDegreeInstitutions.map((x) => x.value) }] }} /></div>
+          <div className="rounded-lg border bg-white p-4 md:col-span-2">
+            <h3 className="mb-3 text-sm font-semibold">Geographic Distribution</h3>
+            <p className="mb-3 text-xs text-slate-500">Where alumni are currently working by region.</p>
+            <Radar
+              data={{
+                labels: charts.geographicDistribution.map((x) => x.label),
+                datasets: [{
+                  label: 'Number of Alumni',
+                  data: charts.geographicDistribution.map((x) => x.value),
+                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                  borderColor: '#3B82F6',
+                  borderWidth: 2,
+                  pointBackgroundColor: '#3B82F6',
+                  pointBorderColor: '#fff',
+                  pointRadius: 4,
+                }],
+              }}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { r: { beginAtZero: true, ticks: { stepSize: 50 } } },
+              }}
+            />
+          </div>
         </div>
       )}
     </section>
