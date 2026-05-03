@@ -20,23 +20,27 @@ export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
           <thead className="bg-slate-100 text-left">
             <tr>
               <th className="p-3">Name</th>
-              <th className="p-3">LinkedIn</th>
-              <th className="p-3">Latest role</th>
+              <th className="p-3">Program</th>
+              <th className="p-3">Graduation Date</th>
               <th className="p-3">Latest company</th>
               <th className="p-3">Certifications</th>
-              <th className="p-3">Certs / Courses / Degrees</th>
+              <th className="p-3">Industry</th>
             </tr>
           </thead>
           <tbody>
             {alumni.map((a) => (
               <tr key={a._id} className="border-t">
                 <td className="p-3">{a.firstName} {a.lastName}</td>
-                <td className="p-3">
-                  {a.linkedInUrl
-                    ? <a className="text-blue-600 hover:underline" href={a.linkedInUrl} target="_blank" rel="noreferrer">Profile</a>
+                <td className="p-3 align-top">
+                  {a.programs.length > 0
+                    ? <div className="space-y-1">{a.programs.map((program, index) => <div key={`${a._id}-program-${index}`}>{program}</div>)}</div>
                     : '-'}
                 </td>
-                <td className="p-3">{a.latestJobTitle || '-'}</td>
+                <td className="p-3 align-top">
+                  {a.graduationDateLines.length > 0
+                    ? <div className="space-y-1">{a.graduationDateLines.map((line, index) => <div key={`${a._id}-grad-${index}`}>{line}</div>)}</div>
+                    : '-'}
+                </td>
                 <td className="p-3">{a.latestCompany || '-'}</td>
                 <td className="p-3 align-top">
                   {a.certifications.length > 0
@@ -44,7 +48,7 @@ export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
                     : '-'}
                 </td>
                 <td className="p-3 text-slate-600">
-                  {a.certificationsCount} / {a.coursesCount} / {a.degreesCount}
+                  {a.latestIndustry || '-'}
                 </td>
               </tr>
             ))}

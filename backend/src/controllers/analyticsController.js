@@ -3,6 +3,16 @@ const FeaturedAlumni = require('../models/FeaturedAlumni');
 
 const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const formatDateDDMMYYYY = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = date.getUTCFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 // Filters are anchored on profile fields the EJS profile captures:
 // degree title + degree completion date + employment industry.
 const buildProfileFilter = (query) => {
@@ -54,6 +64,27 @@ const listAlumni = async (req, res, next) => {
       });
       const latestEmployment = employmentSorted[0] || null;
 
+      const degreesSorted = [...(p.degrees || [])].sort((a, b) => {
+        const at = a.completionDate ? new Date(a.completionDate).getTime() : 0;
+        const bt = b.completionDate ? new Date(b.completionDate).getTime() : 0;
+        return bt - at;
+      });
+      const programs = degreesSorted
+        .map((d) => (d?.title || '').trim())
+        .filter(Boolean);
+      const graduationDateDisplay = degreesSorted.length <= 1
+        ? (formatDateDDMMYYYY(degreesSorted[0]?.completionDate) || '')
+        : degreesSorted
+          .map((d) => {
+            const title = (d?.title || '').trim() || 'Degree';
+            const date = formatDateDDMMYYYY(d?.completionDate) || '-';
+            return `${title}: ${date}`;
+          })
+          .join(';');
+      const graduationDateLines = degreesSorted.length <= 1
+        ? [graduationDateDisplay].filter(Boolean)
+        : graduationDateDisplay.split(';').map((line) => line.trim()).filter(Boolean);
+
       // Top certification = most recently completed.
       const certsSorted = [...(p.certifications || [])].sort((a, b) => {
         const at = a.completionDate ? new Date(a.completionDate).getTime() : 0;
@@ -70,8 +101,12 @@ const listAlumni = async (req, res, next) => {
         firstName: p.firstName,
         lastName: p.lastName,
         linkedInUrl: p.linkedInUrl || '',
+        programs,
+        graduationDateDisplay,
+        graduationDateLines,
         latestJobTitle: latestEmployment?.jobTitle || '',
         latestCompany: latestEmployment?.company || '',
+        latestIndustry: latestEmployment?.industry || '',
         certifications,
         topCertification,
         certificationsCount: (p.certifications || []).length,

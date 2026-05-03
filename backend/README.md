@@ -399,7 +399,7 @@ CSRF: enforced when `ENABLE_CSRF=true`. Rate limit: 20 requests / 15 min per IP.
 
 | Method | Path | Required scope | Query filters | Notes |
 |---|---|---|---|---|
-| `GET` | `/alumni` | `read:alumni` OR `read:analytics` | program, graduationDate, industrySector | Returns `{ count, items[] }`. Each item is a derived row with latestJobTitle, latestCompany, certifications[] (all cert titles), topCertification, certificationsCount, etc. |
+| `GET` | `/alumni` | `read:alumni` OR `read:analytics` | program, graduationDate, industrySector | Returns `{ count, items[] }`. Each item is a derived row with programs[], graduationDateDisplay, graduationDateLines[], latestCompany, latestIndustry, certifications[] (all cert titles), topCertification, certificationsCount, etc. |
 | `GET` | `/summary` | `read:analytics` | same | `{ totalAlumniTracked, employmentRate, avgCertificationsPerAlumnus }` |
 | `GET` | `/charts` | `read:analytics` | same | `{ skillsGap, certificationTrend, employmentByIndustry, commonJobTitles, topEmployers, topCourseProviders, geographicDistribution }` |
 | `GET` | `/donations-summary` | `read:donations` | same | `{ featuredWins, totalSponsoredAmount, averageSponsoredAmount }` — built from `FeaturedAlumni.winningBidAmount` |
