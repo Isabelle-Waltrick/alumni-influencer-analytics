@@ -173,6 +173,7 @@ const getChartData = async (req, res, next) => {
       'North America',
       'Asia',
       'Middle East',
+      'South America',
     ];
     const geoCounts = Object.fromEntries(geoLabels.map((label) => [label, 0]));
     const geoLabelByLower = Object.fromEntries(geoLabels.map((label) => [label.toLowerCase(), label]));
