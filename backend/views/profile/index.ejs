@@ -212,13 +212,23 @@
           el.innerHTML = '<p class="text-muted small">None added yet.</p>';
           return;
         }
+        const labelMap = {
+          jobTitle: 'Job title',
+          company: 'Company',
+          industry: 'Industry',
+          startDate: 'Start date',
+          endDate: 'End date',
+          completionDate: 'Completion date',
+          issuingBody: 'Issuing body',
+          awardingBody: 'Awarding body',
+        };
         el.innerHTML = items.map(item => `
     <div class="d-flex justify-content-between align-items-start border rounded p-2 mb-2">
       <div class="small">
-        ${fields.map(f => item[f] ? `<span><strong>${f}:</strong> ${f.toLowerCase().includes('url') && item[f]
-            ? `<a href="${item[f]}" target="_blank">${item[f]}</a>`
-            : item[f]
-          }</span> ` : '').join('')}
+        ${fields.map(f => item[f] ? `<span class="d-inline-block me-3 mb-1"><strong>${labelMap[f] || f}:</strong> ${f.toLowerCase().includes('url') && item[f]
+          ? `<a href="${item[f]}" target="_blank">${item[f]}</a>`
+          : item[f]
+          }</span>` : '').join('')}
       </div>
       <button class="btn btn-sm btn-outline-danger ms-2 flex-shrink-0"
               onclick="deleteItem('${section}','${item._id}')">Remove</button>
