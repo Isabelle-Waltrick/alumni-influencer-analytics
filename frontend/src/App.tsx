@@ -17,9 +17,15 @@ import { ResetWithTokenPage } from './pages/ResetWithTokenPage'
 import { apiBase, getCsrfHeaders } from './lib/api'
 import type { SessionUser, ToastState } from './types'
 
+// Keeps the analytics key available across refreshes within the same browser tab.
+const analyticsApiKeyStorageKey = 'analytics-dashboard-api-key'
+
 // Composition root — owns global session + apiKey + toast state, then dispatches to pages.
 export default function App() {
-  const [apiKey, setApiKey] = useState('')
+  const [apiKey, setApiKey] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return window.sessionStorage.getItem(analyticsApiKeyStorageKey) || ''
+  })
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
   const [toast, setToast] = useState<ToastState>(null)
@@ -54,6 +60,19 @@ export default function App() {
     }
     checkSession()
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Persist the trimmed key so protected pages can auto-load after refresh/navigation.
+    const normalizedApiKey = apiKey.trim()
+    if (normalizedApiKey) {
+      window.sessionStorage.setItem(analyticsApiKeyStorageKey, normalizedApiKey)
+      return
+    }
+
+    window.sessionStorage.removeItem(analyticsApiKeyStorageKey)
+  }, [apiKey])
 
   const handleLogout = async () => {
     try {

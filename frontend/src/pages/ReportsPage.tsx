@@ -44,7 +44,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     }
     setFilters({ ...emptyFilters, ...JSON.parse(raw) })
     setPresetName(name)
-    setPresetMsg(`Loaded "${name}". Click Load Report Data to fetch.`)
+    setPresetMsg(`Loaded "${name}". Use the load button to refresh with those filters.`)
   }
 
   const deletePreset = (name: string) => {
@@ -239,7 +239,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         )}
         {noData && (
           <p className="text-slate-600">
-            No data yet. Paste an API key with <code>read:alumni</code> + <code>read:analytics</code> in the sidebar, set filters above (or leave blank), then click Load Report Data.
+            No data yet. Paste an API key with <code>read:alumni</code> + <code>read:analytics</code> in the sidebar to load everything automatically, or use the filters above and then refresh with the load button.
           </p>
         )}
       </div>

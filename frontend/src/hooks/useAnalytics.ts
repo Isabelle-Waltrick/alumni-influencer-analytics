@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import axios from 'axios'
 import { apiBase, encodeFilters, getApiErrorMessage } from '../lib/api'
 import type { AlumniRow, ChartsResponse, Filters, Summary } from '../types'
@@ -15,11 +15,14 @@ export const useAnalytics = (
   const [alumni, setAlumni] = useState<AlumniRow[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Tracks which key already triggered the initial auto-load for this page instance.
+  const lastAutoLoadedKey = useRef('')
 
   const queryString = useMemo(() => encodeFilters(filters), [filters])
+  const normalizedApiKey = apiKey.trim()
 
-  const fetchAll = async () => {
-    if (!apiKey) {
+  const fetchAll = useCallback(async () => {
+    if (!normalizedApiKey) {
       setError('Enter API key with required scopes')
       return
     }
@@ -27,7 +30,7 @@ export const useAnalytics = (
     setLoading(true)
     setError('')
     try {
-      const headers = { Authorization: `Bearer ${apiKey}` }
+      const headers = { Authorization: `Bearer ${normalizedApiKey}` }
       const [s, c, a] = await Promise.all([
         axios.get(`${apiBase}/api/analytics/summary?${queryString}`, { headers }),
         axios.get(`${apiBase}/api/analytics/charts?${queryString}`, { headers }),
@@ -43,7 +46,15 @@ export const useAnalytics = (
     } finally {
       setLoading(false)
     }
-  }
+  }, [normalizedApiKey, onErrorToast, queryString])
+
+  useEffect(() => {
+    // Auto-load once when a usable API key becomes available on page entry.
+    if (!normalizedApiKey || lastAutoLoadedKey.current === normalizedApiKey) return
+
+    lastAutoLoadedKey.current = normalizedApiKey
+    void fetchAll()
+  }, [fetchAll, normalizedApiKey])
 
   return { summary, charts, alumni, loading, error, fetchAll }
 }
