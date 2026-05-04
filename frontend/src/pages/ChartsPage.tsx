@@ -1,5 +1,25 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// pages/ChartsPage.tsx — Interactive charts and data visualisations
+//
+// Displays six chart cards, each showing a different view of alumni data:
+//   1. Skills Gap Analysis (Bar)       — cert adoption rates colour-coded by severity
+//   2. Certification Trend (Line)      — how certification uptake changes year on year
+//   3. Employment by Industry (Pie)    — which industries alumni work in
+//   4. Most Common Job Titles (Doughnut)— top job roles across the cohort
+//   5. Top Employers (Horizontal Bar)  — companies that appear most often
+//   6. Geographic Distribution (Radar) — regions where alumni are working
+//
+// Features:
+//   • Filterable via the FiltersBar (same as other pages)
+//   • Each card has an "Expand" button that opens a full-screen modal with a
+//     larger chart area (especially useful on mobile)
+//   • A "Download Chart Image" button exports all charts to a single PNG file
+//   • A compact flag reduces font/tick sizes on small screens so charts remain
+//     legible without horizontal scrolling
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Bar, Doughnut, Line, Pie, Radar } from 'react-chartjs-2'
+import { Bar, Doughnut, Line, Pie, Radar } from 'react-chartjs-2'  // Chart.js wrapper components
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
@@ -8,22 +28,34 @@ import type { Filters } from '../types'
 
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
+// ChartDefinition — a blueprint for one chart card.
+// By storing each chart as a data object we can map over them uniformly
+// to render all chart cards and the expanded modal without repeating JSX.
 type ChartDefinition = {
-  id: string
-  title: string
-  description: ReactNode
-  renderChart: (expanded: boolean) => ReactNode
+  id: string                                   // Unique identifier used to track which chart is expanded
+  title: string                                // Heading shown on the card
+  description: ReactNode                       // Explanation text below the heading
+  renderChart: (expanded: boolean) => ReactNode  // Function that returns the actual <Bar>, <Pie> etc.
+  // expanded=true means the chart is in the modal —
+  // the function can then use larger fonts/padding
 }
 
+// ChartCardProps — props for the individual chart card component
 type ChartCardProps = {
   chart: ChartDefinition
-  onExpand: (id: string) => void
+  onExpand: (id: string) => void  // Called when "Expand" is clicked; sets the modal chart ID
 }
 
+// CSS class strings stored as constants to avoid repeating them.
+// chartViewportClass: fixed height so Chart.js can calculate axis sizes properly.
+// expandedChartViewportClass: wider minimum width so the modal is usable on large screens.
 // Keep mobile cards fully visible while still giving desktop enough chart area.
 const chartViewportClass = 'h-56 sm:h-72 lg:h-96 xl:h-[28rem]'
 const expandedChartViewportClass = 'h-[22rem] w-full sm:h-[30rem] sm:min-w-[48rem] sm:w-auto'
 
+// ChartCard — renders a single chart inside a titled card with an Expand button.
+// It is kept outside ChartsPage so React does not re-create the component type
+// on every render (which would unmount/remount and reset Chart.js animations).
 const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
   <article className="min-w-0 overflow-hidden rounded-lg border bg-white p-3 sm:p-4">
     <div className="mb-3 flex items-start justify-between gap-3">
@@ -47,11 +79,21 @@ const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
 
 export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
+
+  // expandedChartId — stores the ID of the chart currently open in the full-screen
+  // modal, or null if no modal is open.
   const [expandedChartId, setExpandedChartId] = useState<string | null>(null)
+
+  // isCompactCharts — true when the viewport is narrow (<768 px).
+  // Chart.js tick font sizes and legend sizes are reduced to keep charts readable
+  // on small screens. This state updates automatically when the window is resized.
   const [isCompactCharts, setIsCompactCharts] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.innerWidth < 768
   })
+
+  // We use charts and alumni from useAnalytics. charts feeds the chart visualisations;
+  // alumni feeds the filter dropdown options.
   const { charts, alumni, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
 
   const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
@@ -71,31 +113,33 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       setIsCompactCharts(matchesCompact)
     }
 
-    syncCompactCharts(mediaQuery.matches)
+    syncCompactCharts(mediaQuery.matches)  // Apply on first render
 
     const handleChange = (event: MediaQueryListEvent) => {
-      syncCompactCharts(event.matches)
+      syncCompactCharts(event.matches)  // Re-apply when the viewport crosses the breakpoint
     }
 
     mediaQuery.addEventListener('change', handleChange)
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)  // Cleanup on unmount
   }, [])
 
+  // When a chart is expanded into the modal, prevent the page behind it from scrolling.
+  // We also listen for the Escape key so keyboard users can close the modal easily.
   useEffect(() => {
     if (!expandedChartId) return
 
     const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'  // Prevent background scroll while modal is open
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setExpandedChartId(null)
+        setExpandedChartId(null)  // Close the modal on Escape key
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => {
-      document.body.style.overflow = previousOverflow
+      document.body.style.overflow = previousOverflow  // Restore scroll on close
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [expandedChartId])
@@ -119,43 +163,64 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     return '#6B7280'
   }
 
+  // ——— Data preparation for the Certification Trend line chart ———
+  // trendSeries — flat list of { certification, year, value } entries from the API
   const trendSeries = charts?.certificationTrendSeries || []
+
+  // Get a sorted unique list of years (x-axis labels for the line chart)
   const trendYearLabels = Array.from(new Set(trendSeries.map((entry) => entry.year))).sort(
     (a, b) => Number(a) - Number(b)
   )
+
+  // Get a unique list of certification names (one line per certification)
   const certificationNames = Array.from(new Set(trendSeries.map((entry) => entry.certification)))
+
+  // alumniTotalsByYear — total alumni graduated each year; used to convert counts to percentages
   const totalsByYear = charts?.alumniTotalsByYear || {}
+
+  // If every year has a known total, show percentages on the Y-axis.
+  // Otherwise fall back to raw counts (some data sets may not have total-by-year data).
   const usePercentages =
     trendYearLabels.length > 0 && trendYearLabels.every((year) => (totalsByYear[year] || 0) > 0)
 
+  // Pivot the flat trendSeries into a nested object keyed by certification then year.
+  // Structure: { 'AWS Certified': { '2021': 5, '2022': 10, ... }, ... }
+  // This makes it easy to look up a certification's value for any given year.
   const certYearValues = trendSeries.reduce<Record<string, Record<string, number>>>((acc, entry) => {
     if (!acc[entry.certification]) acc[entry.certification] = {}
     acc[entry.certification][entry.year] = entry.value
     return acc
   }, {})
 
+  // lineColorFor — generates a visually distinct colour for each certification line
+  // using the "golden angle" (137.508°) technique: spacing hues around the colour
+  // wheel by the golden ratio ensures no two adjacent lines look similar.
   const lineColorFor = (index: number) => {
     const hue = Math.round((index * 137.508) % 360)
     return `hsl(${hue} 72% 44%)`
   }
 
+  // Pre-compute a stable colour map so the same certification always gets the same
+  // colour even if the chart is re-rendered with different filter results.
   const lineColorByCertification = new Map(
     certificationNames.map((certification, index) => [certification, lineColorFor(index)])
   )
 
+  // Build the Chart.js dataset array — one dataset object per certification.
+  // Each dataset controls colour, dot size, line tension, etc.
   const certificationTrendDatasets = certificationNames.map((certification, index) => {
     const borderColor = lineColorByCertification.get(certification) || lineColorFor(index)
     return {
       label: certification,
       data: trendYearLabels.map((year) => {
         const count = certYearValues[certification]?.[year] || 0
-        if (!usePercentages) return count
+        if (!usePercentages) return count  // Raw count mode
         const total = totalsByYear[year] || 0
-        return total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0
+        return total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0  // Percentage mode
       }),
       borderColor,
       backgroundColor: borderColor,
-      tension: 0.4,
+      tension: 0.4,         // Slightly curved lines
       borderWidth: 3,
       pointRadius: 4,
       pointHoverRadius: 6,
@@ -165,9 +230,14 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     }
   })
 
+  // ——— Data preparation for the Geographic Distribution radar chart ———
   const geographicValues = charts?.geographicDistribution.map((x) => x.value) || []
   const maxGeographicAlumni = geographicValues.length ? Math.max(...geographicValues) : 0
+  // geographicStepSize: a readable tick interval on the radar's radial axis.
+  // Dividing max by 3 gives roughly 3 rings on the chart.
   const geographicStepSize = Math.max(1, Math.ceil(maxGeographicAlumni / 3))
+
+  // ——— Totals used for percentage calculations in chart tooltips ———
   // Totals power the richer tooltip text and keep chart hover details aligned with exports.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
@@ -180,7 +250,9 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     return ((value / total) * 100).toFixed(1)
   }
 
+  // Font size helpers: smaller ticks on narrow screens, normal size on desktop.
   const sharedTickFontSize = isCompactCharts ? 10 : 12
+  // Legend position: bottom on mobile (less width), right on desktop (avoids squashing the chart).
   const compactLegendPosition = 'bottom' as const
   const wideLegendPosition = 'right' as const
 
@@ -417,7 +489,7 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     },
     {
       id: 'geographic-distribution',
-      title: 'Geographic Distribution',
+      title: 'Geographic Distribution (Radar)',
       description: 'Where alumni are currently working by region, based on the country or location listed in their most recent employment record.',
       renderChart: (expanded) => (
         <Radar

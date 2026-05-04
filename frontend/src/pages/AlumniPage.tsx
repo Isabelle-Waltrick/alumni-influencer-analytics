@@ -1,3 +1,16 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// pages/AlumniPage.tsx — Alumni Explorer: searchable, filterable alumni table
+//
+// Displays every alumni record as a row in a table (desktop) or as stacked
+// cards (mobile). The user can filter by program, graduation date, and
+// industry sector, then click "Apply Filters" to reload the data.
+//
+// Layout strategy:
+//   Mobile  (<768 px): stacked article cards so each person's data stays
+//                       readable without horizontal scrolling
+//   Desktop (≥768 px): full table with columns for each data field
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useMemo, useState } from 'react'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -8,9 +21,13 @@ import type { Filters } from '../types'
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
 export const AlumniPage = ({ apiKey, onErrorToast }: Props) => {
+  // filters — current state of the three filter fields
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
+
+  // We only use alumni (not summary or charts) on this page.
   const { alumni, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
 
+  // Build the dropdown option lists from the fetched alumni data.
   const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
   const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
 

@@ -1,6 +1,25 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// pages/ReportsPage.tsx — Data exports and filter presets
+//
+// Lets the user download the currently loaded analytics data in two formats:
+//   • CSV  — a multi-section spreadsheet with alumni rows + chart breakdowns
+//   • PDF  — a formatted A4 document with tables and section headers
+//
+// The page also offers "Filter Presets":
+//   • Save the current filter values under a name (stored in localStorage)
+//   • Load a saved preset to quickly re-apply a previous set of filters
+//   • Delete saved presets
+//   localStorage persists across browser sessions (unlike sessionStorage)
+//   so presets survive closing and reopening the browser.
+//
+// Libraries used:
+//   papaparse — converts JS arrays/objects into CSV strings
+//   jsPDF     — generates PDF files entirely in the browser (no server needed)
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useMemo, useState } from 'react'
-import Papa from 'papaparse'
-import jsPDF from 'jspdf'
+import Papa from 'papaparse'  // Converts JS objects into CSV format
+import jsPDF from 'jspdf'     // Generates PDF documents in the browser
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
@@ -11,9 +30,18 @@ type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
 export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
+
+  // presetName — the text field where the user types a name to save/load a preset
   const [presetName, setPresetName] = useState('')
+
+  // presetMsg — status message shown after save/load/delete actions (e.g. 'Saved "My Preset".')
   const [presetMsg, setPresetMsg] = useState('')
+
+  // savedPresets — the names of all presets currently stored in localStorage.
+  // Displayed as a list so the user can load or delete them.
   const [savedPresets, setSavedPresets] = useState<string[]>([])
+
+  // We need alumni (for the table section) and charts (for the breakdown sections).
   const { alumni, charts, loading, fetchAll, fetchWithFilters, error } = useAnalytics(apiKey, filters, onErrorToast)
   const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
   const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
@@ -24,7 +52,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     setFilters(clearedFilters)
     await fetchWithFilters(clearedFilters)
   }
-  // Totals are reused by the on-screen summaries and by exported percentage breakdowns.
+
+  // Pre-calculate totals for each breakdown section.
+  // Each total is the sum of all values in that chart dataset —
+  // needed to convert raw counts into percentages for the exports.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
   const topEmployersTotal = charts?.topEmployers.reduce((sum, item) => sum + item.value, 0) || 0
@@ -48,17 +79,22 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     return ((value / total) * 100).toFixed(1)
   }
 
-  // Refresh the preset list from localStorage on mount and after every save/delete.
+  // refreshPresets — reads all keys from localStorage and keeps only the ones
+  // that start with 'preset:'. Strips the prefix to get the human-readable name.
+  // Called on mount and after every save/load/delete so the list stays up to date.
   const refreshPresets = () => {
     const names: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i)
       if (k && k.startsWith('preset:')) names.push(k.slice('preset:'.length))
     }
-    setSavedPresets(names.sort())
+    setSavedPresets(names.sort())  // Sort alphabetically for consistent display order
   }
+  // Load the preset list as soon as this page first renders.
   useEffect(() => { refreshPresets() }, [])
 
+  // savePreset — serialises the current filter object to JSON and stores it
+  // in localStorage under the key 'preset:<name>'.
   const savePreset = () => {
     if (!presetName.trim()) {
       setPresetMsg('Type a preset name first.')
@@ -69,17 +105,20 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     refreshPresets()
   }
 
+  // loadPreset — reads the stored JSON from localStorage and merges it with
+  // emptyFilters so any new fields added later don't cause undefined values.
   const loadPreset = (name: string) => {
     const raw = localStorage.getItem(`preset:${name}`)
     if (!raw) {
       setPresetMsg(`No preset named "${name}".`)
       return
     }
-    setFilters({ ...emptyFilters, ...JSON.parse(raw) })
+    setFilters({ ...emptyFilters, ...JSON.parse(raw) })  // Spread to keep type safety
     setPresetName(name)
     setPresetMsg(`Loaded "${name}". Use the load button to refresh with those filters.`)
   }
 
+  // deletePreset — removes the key from localStorage and refreshes the displayed list.
   const deletePreset = (name: string) => {
     localStorage.removeItem(`preset:${name}`)
     setPresetMsg(`Deleted "${name}".`)
@@ -87,7 +126,9 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   }
 
   const exportCsv = () => {
+    // ——— Section 1: Alumni rows ———
     // The first section mirrors the Alumni Explorer table so spreadsheet exports stay familiar.
+    // Papa.unparse() converts an array of plain objects into a CSV string.
     const alumniCsv = Papa.unparse(
       alumni.map((a) => ({
         Name: `${a.firstName} ${a.lastName}`.trim(),
@@ -98,7 +139,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         Industry: a.latestIndustry || '-',
       }))
     )
+
+    // ——— Sections 2-6: Chart breakdowns ———
     // Extra report sections carry the same count + percentage context shown in the charts.
+    // Each section is only added if the data exists (?.length check).
     const jobTitlesCsv = charts?.commonJobTitles?.length
       ? Papa.unparse(
         charts.commonJobTitles.map((item) => ({
@@ -153,6 +197,8 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         })
       )
       : ''
+    // Join all non-empty sections with a blank line between them.
+    // filter(Boolean) removes any empty strings (sections that had no data).
     const csvSections = [
       'Alumni',
       alumniCsv,
@@ -163,26 +209,37 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       certificationTrendCsv ? `Certification Trend by Year and Certification\n${certificationTrendCsv}` : '',
     ].filter(Boolean)
     const csv = csvSections.join('\n\n')
+
+    // Create a Blob (binary object) from the CSV string and trigger a browser download.
+    // URL.createObjectURL creates a temporary URL pointing to the blob data.
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
+    const link = document.createElement('a')  // Create a hidden <a> element to trigger the download
     link.href = url
     link.download = 'alumni-report.csv'
-    link.click()
+    link.click()  // Programmatically click the link to start the download
   }
 
   const exportPdf = () => {
-    const doc = new jsPDF()
-    const pageBottom = 285
-    let y = 18
+    const doc = new jsPDF()  // Create a new A4-sized PDF document (default: portrait, mm units)
+    const pageBottom = 285  // Leave ~5 mm margin at the bottom before adding a new page
+    let y = 18              // Current vertical cursor position in mm from the top of the page
 
+    // newPageIfNeeded — checks whether the next content block fits on the current page.
+    // If not, it creates a new page and resets y to the top margin.
     const newPageIfNeeded = (need = 8) => {
       if (y + need > pageBottom) {
         doc.addPage()
         y = 18
       }
     }
+
+    // truncate — clips a string to n characters and adds '…' if it was cut.
+    // Prevents long text from overflowing a column in the PDF table.
     const truncate = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
+
+    // sectionHeader — prints a bold section title with a small gap above it.
+    // Resets the font back to normal size/weight afterwards so body text is unaffected.
     const sectionHeader = (title: string) => {
       newPageIfNeeded(12)
       y += 3
@@ -193,6 +250,9 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       doc.setFontSize(9)
       doc.setFont('helvetica', 'normal')
     }
+
+    // writeList — prints each item as "left text  —  right text" on its own line.
+    // Used for all the breakdown sections (employers, job titles, etc.).
     const writeList = (items: Array<{ left: string; right?: string | number }>) => {
       for (const it of items) {
         newPageIfNeeded()
@@ -202,6 +262,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       }
     }
 
+    // ——— Document title and metadata ———
     // Title + meta
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
@@ -210,6 +271,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     doc.setFont('helvetica', 'normal')
     doc.text(`Generated: ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC`, 14, y); y += 5
 
+    // Print the active filters so the reader knows what subset of data is in the report.
     const activeFilters = Object.entries(filters).filter(([, v]) => v && String(v).trim() !== '')
     doc.text(
       activeFilters.length
@@ -218,6 +280,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       14, y,
     ); y += 6
 
+    // ——— Summary KPI numbers ———
     // Summary KPIs
     sectionHeader('Summary')
     writeList([
@@ -228,6 +291,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       { left: 'Geographic distribution entries', right: charts?.geographicDistribution?.length ?? 0 },
     ])
 
+    // ——— Alumni table ———
+    // Each cell can be multi-line (e.g. multiple programs/dates), so we measure
+    // the tallest cell in each row and use that height for the whole row.
+    // Column positions (x) and widths are tuned to fit A4 portrait at ~9 pt.
     // Alumni table — column positions chosen to fit A4 portrait at ~9pt
     if (alumni.length > 0) {
       sectionHeader('Alumni')
@@ -312,6 +379,9 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       y += 5
     }
 
+    // ——— Add page numbers to every page ———
+    // We can only know the total page count AFTER all content has been added,
+    // so we loop back over every page at the end to stamp "Page X of Y".
     // Page numbers
     const total = doc.getNumberOfPages()
     for (let i = 1; i <= total; i++) {
@@ -321,10 +391,16 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       doc.text(`Page ${i} of ${total}`, 196, 290, { align: 'right' })
     }
 
+    // Trigger the browser's file download dialog.
     doc.save('analytics-report.pdf')
   }
 
+  // dataReady — true when there is at least one alumni row to export.
+  // Disables the export buttons when no data has been loaded yet.
   const dataReady = alumni.length > 0
+
+  // noData — true when loading has finished but nothing was returned.
+  // Used to show the "paste your API key" hint message.
   const noData = !loading && !error && alumni.length === 0
 
   return (

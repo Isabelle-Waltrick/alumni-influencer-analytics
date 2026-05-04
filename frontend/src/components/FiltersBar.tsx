@@ -1,3 +1,23 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// components/FiltersBar.tsx — Reusable filter panel with Program, Graduation
+//                              Date, and Industry Sector fields
+//
+// Used on Dashboard, Alumni Explorer, Charts, and Reports pages.
+// The parent page owns the filter state; this component only reads it and
+// calls callbacks (setFilters / onAction / onClear) when the user interacts.
+//
+// Props:
+//   filters         → current filter values from the parent page's state
+//   setFilters      → parent's state setter — called whenever a field changes
+//   actionLabel     → text for the primary button (e.g. "Apply Filters")
+//   onAction        → called when the primary button is clicked (usually fetches data)
+//   onClear         → optional override for the Clear button; when omitted the bar
+//                     just resets the fields without triggering a data reload
+//   actionDisabled  → disables the primary button (e.g. while loading)
+//   programOptions  → sorted list of programs to show in the Program combobox
+//   industryOptions → sorted list of industries to show in the Industry combobox
+// ─────────────────────────────────────────────────────────────────────────────
+
 import type { Filters } from '../types'
 import { emptyFilters } from '../lib/constants'
 import { FilterCombobox } from './FilterCombobox'

@@ -1,3 +1,20 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// lib/filterOptions.ts — Builds dropdown option lists from the alumni dataset
+//
+// The Program and Industry Sector comboboxes on every filter bar show lists of
+// values that actually exist in the current data (not a static hardcoded list).
+// This means if you filter to a specific program first, the industry dropdown
+// will only show industries relevant to the visible data.
+//
+// Both functions follow the same pattern:
+//   1. Extract the relevant field from every alumni record
+//   2. Remove blanks and duplicates (using Set)
+//   3. Sort alphabetically (case-insensitive)
+//
+// They are called inside useMemo() on each page so they only re-run when the
+// alumni array actually changes, not on every keystroke or render.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import type { AlumniRow } from '../types'
 
 /**

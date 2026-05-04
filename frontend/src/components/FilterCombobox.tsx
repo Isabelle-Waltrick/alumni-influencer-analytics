@@ -1,3 +1,20 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// components/FilterCombobox.tsx — Accessible type-ahead dropdown input
+//
+// A custom replacement for the native HTML <datalist> element, which renders
+// inconsistently across browsers (especially on mobile Safari and Firefox).
+//
+// How it works:
+//   1. The user types into a regular <input>. As they type, the list of options
+//      is filtered down to only items containing the typed text.
+//   2. A dropdown <ul> appears below the input showing the matching options.
+//   3. Clicking (or tapping) an option fills the input and closes the dropdown.
+//   4. Clicking outside the component or pressing Escape also closes it.
+//   5. A small chevron button on the right lets users open/close without typing.
+//
+// Used by FiltersBar.tsx for the Program and Industry Sector fields.
+// ─────────────────────────────────────────────────────────────────────────────
+
 import { useEffect, useRef, useState } from 'react'
 
 /**
