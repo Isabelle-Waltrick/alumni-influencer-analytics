@@ -19,12 +19,12 @@ type ChartCardProps = {
   onExpand: (id: string) => void
 }
 
-// Taller cards on large screens so chart content isn't cramped
-const chartViewportClass = 'h-64 sm:h-72 lg:h-96 xl:h-[28rem]'
-const expandedChartViewportClass = 'h-[30rem] min-w-[48rem] sm:h-[34rem]'
+// Keep mobile cards fully visible while still giving desktop enough chart area.
+const chartViewportClass = 'h-56 sm:h-72 lg:h-96 xl:h-[28rem]'
+const expandedChartViewportClass = 'h-[22rem] w-full sm:h-[30rem] sm:min-w-[48rem] sm:w-auto'
 
 const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
-  <article className="rounded-lg border bg-white p-4">
+  <article className="min-w-0 overflow-hidden rounded-lg border bg-white p-3 sm:p-4">
     <div className="mb-3 flex items-start justify-between gap-3">
       <div>
         <h3 className="mb-1 text-sm font-semibold">{chart.title}</h3>
@@ -33,14 +33,14 @@ const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
       {/* Each chart can open in a wider viewport so mobile users can inspect dense legends and labels. */}
       <button
         type="button"
-        className="shrink-0 rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        className="shrink-0 rounded border border-slate-300 px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 sm:px-3 sm:py-2"
         onClick={() => onExpand(chart.id)}
       >
         Expand
       </button>
     </div>
     {/* Fixed-height containers give Chart.js enough room to render axes and legends on small screens. */}
-    <div className={chartViewportClass}>{chart.renderChart(false)}</div>
+    <div className={`min-w-0 ${chartViewportClass}`}>{chart.renderChart(false)}</div>
   </article>
 )
 
