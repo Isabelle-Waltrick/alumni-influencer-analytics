@@ -35,7 +35,7 @@ type Props = {
   onLogout: () => Promise<void>
   user: SessionUser
 }
-
+// AppShell is the main layout component for all protected pages.
 export const AppShell = ({ children, apiKey, setApiKey, onLogout, user }: Props) => {
   // useLocation() gives us the current URL path. We compare it against each
   // nav link's `to` prop to highlight the active link with a dark background.

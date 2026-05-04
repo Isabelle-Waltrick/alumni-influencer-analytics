@@ -37,7 +37,7 @@ type Props = {
   /** Alphabetically-sorted industry sectors derived from the current alumni dataset. */
   industryOptions?: string[]
 }
-
+// FiltersBar is a reusable component that renders the three filter fields and the
 export const FiltersBar = ({
   filters,
   setFilters,
