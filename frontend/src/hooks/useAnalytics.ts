@@ -21,6 +21,9 @@ export const useAnalytics = (
   const queryString = useMemo(() => encodeFilters(filters), [filters])
   const normalizedApiKey = apiKey.trim()
 
+  // Internal primitive: fetches all three endpoints using an arbitrary pre-encoded query string.
+  // Centralising the fetch logic here means `fetchAll` and `fetchWithFilters` are thin wrappers
+  // that don't duplicate the loading/error/setState boilerplate.
   const fetchByQuery = useCallback(async (query: string) => {
     if (!normalizedApiKey) {
       setError('Enter API key with required scopes')
@@ -52,6 +55,9 @@ export const useAnalytics = (
     await fetchByQuery(queryString)
   }, [fetchByQuery, queryString])
 
+  // Accepts an explicit Filters object and fetches immediately using those values.
+  // Used by the Clear button on ChartsPage so it can reset state and reload unfiltered
+  // data in a single action, without waiting for a second "Apply Filters" click.
   const fetchWithFilters = useCallback(async (nextFilters: Filters) => {
     await fetchByQuery(encodeFilters(nextFilters))
   }, [fetchByQuery])

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Papa from 'papaparse'
 import jsPDF from 'jspdf'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
+import { buildIndustryOptions, buildProgramOptions } from '../lib/filterOptions'
 import type { Filters } from '../types'
 
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
@@ -14,6 +15,8 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const [presetMsg, setPresetMsg] = useState('')
   const [savedPresets, setSavedPresets] = useState<string[]>([])
   const { alumni, charts, loading, fetchAll, error } = useAnalytics(apiKey, filters, onErrorToast)
+  const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
+  const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
   // Totals are reused by the on-screen summaries and by exported percentage breakdowns.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
@@ -326,6 +329,8 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         actionLabel={loading ? 'Loading…' : 'Apply Filters'}
         onAction={fetchAll}
         actionDisabled={loading}
+        programOptions={programOptions}
+        industryOptions={industryOptions}
       />
       <div className="flex flex-wrap gap-2">
         <button onClick={exportCsv} disabled={!dataReady}

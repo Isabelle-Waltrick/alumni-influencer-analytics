@@ -1,19 +1,30 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
+import { buildIndustryOptions, buildProgramOptions } from '../lib/filterOptions'
 import type { Filters } from '../types'
 
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
 export const DashboardPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
-  const { summary, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
+  const { summary, alumni, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
+
+  const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
+  const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
 
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        actionLabel="Apply Filters"
+        onAction={fetchAll}
+        programOptions={programOptions}
+        industryOptions={industryOptions}
+      />
       {loading && <p className="text-sm text-slate-500">Loading...</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}
       {summary && (

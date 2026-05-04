@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Bar, Doughnut, Line, Pie, Radar } from 'react-chartjs-2'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { emptyFilters } from '../lib/constants'
+import { buildIndustryOptions, buildProgramOptions } from '../lib/filterOptions'
 import type { Filters } from '../types'
 
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
@@ -51,7 +52,10 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     if (typeof window === 'undefined') return false
     return window.innerWidth < 768
   })
-  const { charts, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
+  const { charts, alumni, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
+
+  const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
+  const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
 
   const handleClearFilters = async () => {
     const clearedFilters = { ...emptyFilters }
@@ -553,6 +557,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
         actionLabel="Apply Filters"
         onAction={fetchAll}
         onClear={handleClearFilters}
+        programOptions={programOptions}
+        industryOptions={industryOptions}
       />
       <div className="flex flex-col gap-2 sm:flex-row">
         <button onClick={downloadChartImage} className="rounded border px-4 py-2 text-sm">Download Chart Image</button>

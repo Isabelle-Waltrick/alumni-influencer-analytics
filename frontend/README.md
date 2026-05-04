@@ -89,12 +89,17 @@ frontend/
     ├── lib/
     │   ├── api.ts                   ← apiBase, getApiErrorMessage, getCsrfHeaders, encodeFilters
     │   ├── constants.ts             ← navLinks, emptyFilters
-    │   └── chartjs.ts               ← side-effect: registers Chart.js components used app-wide
+    │   ├── chartjs.ts               ← side-effect: registers Chart.js components used app-wide
+    │   └── filterOptions.ts         ← buildProgramOptions / buildIndustryOptions — derive sorted, deduped
+    │                                  dropdown option lists from the live alumni array
     ├── hooks/
-    │   └── useAnalytics.ts          ← parallel-fetches summary/charts/alumni with loading + error
+    │   └── useAnalytics.ts          ← parallel-fetches summary/charts/alumni with loading + error;
+    │                                  exposes fetchAll (current filters) and fetchWithFilters (explicit filters)
     ├── components/
     │   ├── AppShell.tsx             ← sidebar + main layout (used by all dashboard pages)
     │   ├── AuthLayout.tsx           ← centered card layout for auth pages
+    │   ├── FilterCombobox.tsx       ← accessible type-ahead dropdown used for Program and Industry Sector;
+    │   │                              matches input width, closes on outside click / Escape key
     │   ├── FiltersBar.tsx           ← filter card with Program / Graduation date / Industry sector + per-page action button
     │   ├── Toast.tsx                ← top-right error toast
     │   └── Protected.tsx            ← role guard — redirects non-developer sessions to /login
@@ -320,6 +325,34 @@ The textarea's placeholder reads: *"Paste key with read:analytics scope"* — th
 ---
 
 ## Filters (and how they map to backend)
+
+All four data pages share the same `<FiltersBar>` component. Filters are held in local React state per page so changing filters on the Charts page does not affect the Alumni Explorer.
+
+| Filter field | Input type | Maps to backend query param |
+|---|---|---|
+| Program | `FilterCombobox` (type-ahead) | `?program=<value>` — regex match on `degrees[].title` |
+| Graduation Date | native `<input type="date">` | `?graduationDate=<ISO-date>` — exact-day match on `degrees[].completionDate` |
+| Industry Sector | `FilterCombobox` (type-ahead) | `?industrySector=<value>` — regex match on `employment[].industry` |
+
+The `encodeFilters` helper in `lib/api.ts` serialises only non-empty fields.
+
+### FilterCombobox
+
+Program and Industry Sector use a custom `FilterCombobox` component rather than the native `<datalist>` element:
+
+- **Same width as the input** — dropdown is `position: absolute; left: 0; right: 0` inside a `position: relative` wrapper.
+- **Type-to-filter** — typing narrows the visible options to those containing the entered text.
+- **Browse on focus** — clicking into the empty field shows the full alphabetical list.
+- **Closes** on outside click (`pointerdown` listener) or Escape key.
+- **Chevron icon** rotates 180° when open via Tailwind `transition-transform`.
+
+### Dynamic options
+
+Option lists are built by `lib/filterOptions.ts` (`buildProgramOptions`, `buildIndustryOptions`) from the alumni array already loaded in memory — no extra API call. They are recomputed only when the alumni array changes (`useMemo`).
+
+### Clear button
+
+On the Charts page the Clear button calls `fetchWithFilters(emptyFilters)` so the unfiltered dataset is reloaded immediately — users do not need to click Apply Filters afterwards. On all other pages Clear resets the fields locally and the next Apply triggers the reload.
 
 Filters are three inputs aligned with profile fields the EJS form captures:
 
