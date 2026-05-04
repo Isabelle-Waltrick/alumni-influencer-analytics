@@ -130,7 +130,16 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       {charts && (
         <div id="charts-grid" className="grid gap-4 md:grid-cols-2">
           <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-3 text-sm font-semibold">Skills Gap Analysis (Bar)</h3>
+            <h3 className="mb-1 text-sm font-semibold">Skills Gap Analysis (Bar)</h3>
+            <p className="mb-3 text-xs text-slate-500">
+              Percentage of alumni holding each certification, calculated across all alumni records in the database up to the current date.
+              Bars are colour-coded by gap severity:&nbsp;
+              <span className="font-medium text-red-500">■ Critical (≥ 70%)</span>,&nbsp;
+              <span className="font-medium text-orange-500">■ Significant (≥ 50%)</span>,&nbsp;
+              <span className="font-medium text-yellow-500">■ Emerging (≥ 20%)</span>,&nbsp;
+              <span className="font-medium text-slate-500">■ Monitor (&lt; 20%)</span>.
+              Higher values indicate a widely-held certification; lower values highlight areas where the cohort may be under-qualified.
+            </p>
             <Bar
               data={{
                 labels: charts.skillsGap.map((x) => x.label),
@@ -169,7 +178,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
             />
           </div>
           <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-3 text-sm font-semibold">Certification Trend (Line)</h3>
+            <h3 className="mb-1 text-sm font-semibold">Certification Trend (Line)</h3>
+            <p className="mb-3 text-xs text-slate-500">How certification uptake has changed year-on-year across the cohort. Each line represents one certification; values show the percentage of alumni who held it in a given graduation year.</p>
             <Line
               id="trendsChart"
               data={{ labels: trendYearLabels, datasets: certificationTrendDatasets }}
@@ -210,12 +220,12 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
               }}
             />
           </div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-3 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><p className="mb-3 text-xs text-slate-500">Breakdown of the industries alumni are currently working in, based on their most recent employment record.</p><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><p className="mb-3 text-xs text-slate-500">The most frequently appearing job titles across all alumni employment records, showing which roles the cohort gravitates towards.</p><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><p className="mb-3 text-xs text-slate-500">Companies that appear most frequently across alumni employment records, indicating the organisations where graduates are most likely to be hired.</p><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
           <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-3 text-sm font-semibold">Geographic Distribution</h3>
-            <p className="mb-3 text-xs text-slate-500">Where alumni are currently working by region.</p>
+            <h3 className="mb-1 text-sm font-semibold">Geographic Distribution</h3>
+            <p className="mb-3 text-xs text-slate-500">Where alumni are currently working by region, based on the country or location listed in their most recent employment record.</p>
             <Radar
               data={{
                 labels: charts.geographicDistribution.map((x) => x.label),
