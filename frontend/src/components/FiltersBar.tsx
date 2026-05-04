@@ -6,10 +6,11 @@ type Props = {
   setFilters: (f: Filters) => void
   actionLabel: string
   onAction: () => void
+  onClear?: () => void
   actionDisabled?: boolean
 }
 
-export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, actionDisabled = false }: Props) => (
+export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, onClear, actionDisabled = false }: Props) => (
   <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 lg:grid-cols-3">
     <h3 className="text-sm font-semibold text-slate-700 lg:col-span-3">Filters</h3>
     <div className="space-y-1">
@@ -52,7 +53,13 @@ export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, actionD
         {actionLabel}
       </button>
       <button
-        onClick={() => setFilters({ ...emptyFilters })}
+        onClick={() => {
+          if (onClear) {
+            onClear()
+            return
+          }
+          setFilters({ ...emptyFilters })
+        }}
         type="button"
         className="rounded border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
       >

@@ -51,7 +51,13 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     if (typeof window === 'undefined') return false
     return window.innerWidth < 768
   })
-  const { charts, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
+  const { charts, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
+
+  const handleClearFilters = async () => {
+    const clearedFilters = { ...emptyFilters }
+    setFilters(clearedFilters)
+    await fetchWithFilters(clearedFilters)
+  }
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(max-width: 767px)')
@@ -541,7 +547,13 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Trends, Charts and Graphs</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
+      <FiltersBar
+        filters={filters}
+        setFilters={setFilters}
+        actionLabel="Apply Filters"
+        onAction={fetchAll}
+        onClear={handleClearFilters}
+      />
       <div className="flex flex-col gap-2 sm:flex-row">
         <button onClick={downloadChartImage} className="rounded border px-4 py-2 text-sm">Download Chart Image</button>
       </div>

@@ -21,7 +21,7 @@ export const useAnalytics = (
   const queryString = useMemo(() => encodeFilters(filters), [filters])
   const normalizedApiKey = apiKey.trim()
 
-  const fetchAll = useCallback(async () => {
+  const fetchByQuery = useCallback(async (query: string) => {
     if (!normalizedApiKey) {
       setError('Enter API key with required scopes')
       return
@@ -32,9 +32,9 @@ export const useAnalytics = (
     try {
       const headers = { Authorization: `Bearer ${normalizedApiKey}` }
       const [s, c, a] = await Promise.all([
-        axios.get(`${apiBase}/api/analytics/summary?${queryString}`, { headers }),
-        axios.get(`${apiBase}/api/analytics/charts?${queryString}`, { headers }),
-        axios.get(`${apiBase}/api/analytics/alumni?${queryString}`, { headers }),
+        axios.get(`${apiBase}/api/analytics/summary?${query}`, { headers }),
+        axios.get(`${apiBase}/api/analytics/charts?${query}`, { headers }),
+        axios.get(`${apiBase}/api/analytics/alumni?${query}`, { headers }),
       ])
       setSummary(s.data)
       setCharts(c.data)
@@ -46,7 +46,15 @@ export const useAnalytics = (
     } finally {
       setLoading(false)
     }
-  }, [normalizedApiKey, onErrorToast, queryString])
+  }, [normalizedApiKey, onErrorToast])
+
+  const fetchAll = useCallback(async () => {
+    await fetchByQuery(queryString)
+  }, [fetchByQuery, queryString])
+
+  const fetchWithFilters = useCallback(async (nextFilters: Filters) => {
+    await fetchByQuery(encodeFilters(nextFilters))
+  }, [fetchByQuery])
 
   useEffect(() => {
     // Auto-load once when a usable API key becomes available on page entry.
@@ -56,5 +64,5 @@ export const useAnalytics = (
     void fetchAll()
   }, [fetchAll, normalizedApiKey])
 
-  return { summary, charts, alumni, loading, error, fetchAll }
+  return { summary, charts, alumni, loading, error, fetchAll, fetchWithFilters }
 }
