@@ -18,6 +18,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
   const topEmployersTotal = charts?.topEmployers.reduce((sum, item) => sum + item.value, 0) || 0
+  const geographicDistributionTotal = charts?.geographicDistribution.reduce((sum, item) => sum + item.value, 0) || 0
 
   // Keeps percentage formatting consistent across CSV, PDF, and chart hover text.
   const formatShare = (value: number, total: number) => {
@@ -106,12 +107,23 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         }))
       )
       : ''
+    const geographyCsv = charts?.geographicDistribution?.length
+      ? Papa.unparse(
+        charts.geographicDistribution.map((item) => ({
+          Region: item.label,
+          'Alumni Count': item.value,
+          Percentage: `${formatShare(item.value, geographicDistributionTotal)}%`,
+          Basis: `${geographicDistributionTotal} alumni with a geographic record`,
+        }))
+      )
+      : ''
     const csvSections = [
       'Alumni',
       alumniCsv,
       topEmployersCsv ? `Top Employers\n${topEmployersCsv}` : '',
       jobTitlesCsv ? `Most Common Job Titles\n${jobTitlesCsv}` : '',
       industriesCsv ? `Employment by Industry Sector\n${industriesCsv}` : '',
+      geographyCsv ? `Geographic Distribution\n${geographyCsv}` : '',
     ].filter(Boolean)
     const csv = csvSections.join('\n\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -250,7 +262,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     }
     if (charts?.geographicDistribution?.length) {
       sectionHeader('Geographic Distribution')
-      writeList(charts.geographicDistribution.map((x) => ({ left: x.label, right: x.value })))
+      writeList(charts.geographicDistribution.map((x) => ({ left: x.label, right: `${x.value} alumni (${formatShare(x.value, geographicDistributionTotal)}%)` })))
+      newPageIfNeeded()
+      doc.text(`Based on ${geographicDistributionTotal} alumni with a geographic record.`, 14, y)
+      y += 5
     }
     if (charts?.certificationTrend?.length) {
       sectionHeader('Certification Trend by Year')

@@ -69,10 +69,11 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const geographicValues = charts?.geographicDistribution.map((x) => x.value) || []
   const maxGeographicAlumni = geographicValues.length ? Math.max(...geographicValues) : 0
   const geographicStepSize = Math.max(1, Math.ceil(maxGeographicAlumni / 3))
-  // Totals power the richer tooltip text for pie/doughnut slices.
+  // Totals power the richer tooltip text and keep chart hover details aligned with exports.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
   const topEmployersTotal = charts?.topEmployers.reduce((sum, item) => sum + item.value, 0) || 0
+  const geographicDistributionTotal = charts?.geographicDistribution.reduce((sum, item) => sum + item.value, 0) || 0
 
   // Shared percentage formatter keeps hover labels aligned with report exports.
   const formatShare = (value: number, total: number) => {
@@ -254,7 +255,21 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
               options={{
                 responsive: true,
                 layout: { padding: { top: 92 } },
-                plugins: { legend: { display: false } },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => {
+                        const label = context.label || ''
+                        const value = Number(context.parsed.r) || 0
+                        return `${label}: ${value} alumni (${formatShare(value, geographicDistributionTotal)}%)`
+                      },
+                      footer: () => geographicDistributionTotal > 0
+                        ? `Based on ${geographicDistributionTotal} alumni with a geographic record.`
+                        : 'No geographic data available.',
+                    },
+                  },
+                },
                 scales: {
                   r: {
                     beginAtZero: true,

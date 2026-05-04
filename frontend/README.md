@@ -362,7 +362,7 @@ skillGapColor(value: number):
 
 The same thresholds are applied in the backend (`analyticsController.js`) when computing the `severity` field, and in the frontend tooltip callback. The backend calculates percentage as `Math.round((certCount / totalAlumni) * 100)`.
 
-The bar, line, pie, and doughnut charts use custom tooltip callbacks where needed so hover text can show counts, percentages, severity labels, and the basis for each percentage.
+The bar, line, pie, doughnut, and radar charts use custom tooltip callbacks where needed so hover text can show counts, percentages, severity labels, and the basis for each percentage.
 
 ### Why Geographic Distribution spans both columns
 
@@ -377,6 +377,7 @@ The geographic radar chart has noticeably larger label and ring footprint than t
 The CSV export contains:
 
 - an `Alumni` section aligned with the Alumni Explorer columns: Name, Program, Graduation Date, Latest Company, Certifications, Industry
+- a `Geographic Distribution` section with Alumni Count, Percentage, and Basis
 - a `Most Common Job Titles` section with Alumni Count, Percentage, and Basis
 - an `Employment by Industry Sector` section with Alumni Count, Percentage, and Basis
 
@@ -390,10 +391,10 @@ A manually composed multi-page jsPDF report with:
 - Summary KPIs
 - Alumni table (name / program / graduation date / company / industry) with wrapped cells and row dividers for readability
 - Skills Gap (cert title + % + severity)
-- Top Employers (name + count)
+- Top Employers with count and percentage share
 - Most Common Job Titles with count and percentage share
 - Employment by Industry Sector with count and percentage share
-- Geographic Distribution
+- Geographic Distribution with count and percentage share
 - Certification Trend by Year
 - Page numbers (`Page X of Y`) on every page
 
