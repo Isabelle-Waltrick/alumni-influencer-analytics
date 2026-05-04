@@ -14,9 +14,16 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const [presetName, setPresetName] = useState('')
   const [presetMsg, setPresetMsg] = useState('')
   const [savedPresets, setSavedPresets] = useState<string[]>([])
-  const { alumni, charts, loading, fetchAll, error } = useAnalytics(apiKey, filters, onErrorToast)
+  const { alumni, charts, loading, fetchAll, fetchWithFilters, error } = useAnalytics(apiKey, filters, onErrorToast)
   const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
   const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
+
+  // Clear should reset fields and immediately reload report datasets (tables + chart-backed exports).
+  const handleClearFilters = async () => {
+    const clearedFilters = { ...emptyFilters }
+    setFilters(clearedFilters)
+    await fetchWithFilters(clearedFilters)
+  }
   // Totals are reused by the on-screen summaries and by exported percentage breakdowns.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
@@ -328,6 +335,8 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         setFilters={setFilters}
         actionLabel={loading ? 'Loading…' : 'Apply Filters'}
         onAction={fetchAll}
+        // Use custom clear behavior so report content updates immediately.
+        onClear={handleClearFilters}
         actionDisabled={loading}
         programOptions={programOptions}
         industryOptions={industryOptions}

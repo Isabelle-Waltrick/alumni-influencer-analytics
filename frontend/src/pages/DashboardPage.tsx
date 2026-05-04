@@ -9,10 +9,17 @@ type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
 export const DashboardPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
-  const { summary, alumni, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
+  const { summary, alumni, loading, error, fetchAll, fetchWithFilters } = useAnalytics(apiKey, filters, onErrorToast)
 
   const programOptions = useMemo(() => buildProgramOptions(alumni), [alumni])
   const industryOptions = useMemo(() => buildIndustryOptions(alumni), [alumni])
+
+  // Clear should reset fields and immediately refresh KPI cards with unfiltered values.
+  const handleClearFilters = async () => {
+    const clearedFilters = { ...emptyFilters }
+    setFilters(clearedFilters)
+    await fetchWithFilters(clearedFilters)
+  }
 
   return (
     <section className="space-y-4">
@@ -22,6 +29,8 @@ export const DashboardPage = ({ apiKey, onErrorToast }: Props) => {
         setFilters={setFilters}
         actionLabel="Apply Filters"
         onAction={fetchAll}
+        // Use custom clear behavior so summary data updates immediately.
+        onClear={handleClearFilters}
         programOptions={programOptions}
         industryOptions={industryOptions}
       />
