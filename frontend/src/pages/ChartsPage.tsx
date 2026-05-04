@@ -66,6 +66,10 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     }
   })
 
+  const geographicValues = charts?.geographicDistribution.map((x) => x.value) || []
+  const maxGeographicAlumni = geographicValues.length ? Math.max(...geographicValues) : 0
+  const geographicStepSize = Math.max(1, Math.ceil(maxGeographicAlumni / 3))
+
   // Composes every <canvas> inside #charts-grid onto one image. Avoids html2canvas
   // because Tailwind v4 emits oklch() colors that html2canvas 1.x can't parse.
   const downloadChartImage = () => {
@@ -217,19 +221,42 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
                 labels: charts.geographicDistribution.map((x) => x.label),
                 datasets: [{
                   label: 'Number of Alumni',
-                  data: charts.geographicDistribution.map((x) => x.value),
+                  data: geographicValues,
                   backgroundColor: 'rgba(59, 130, 246, 0.2)',
                   borderColor: '#3B82F6',
                   borderWidth: 2,
                   pointBackgroundColor: '#3B82F6',
                   pointBorderColor: '#fff',
-                  pointRadius: 4,
+                  pointRadius: 3,
+                  pointHoverRadius: 4,
                 }],
               }}
               options={{
                 responsive: true,
+                layout: { padding: { top: 92 } },
                 plugins: { legend: { display: false } },
-                scales: { r: { beginAtZero: true, ticks: { stepSize: 50 } } },
+                scales: {
+                  r: {
+                    beginAtZero: true,
+                    min: 0,
+                    max: maxGeographicAlumni,
+                    angleLines: { display: true },
+                    grid: { display: true, circular: false },
+                    pointLabels: {
+                      padding: 32,
+                    },
+                    ticks: {
+                      display: true,
+                      stepSize: geographicStepSize,
+                      padding: 12,
+                      showLabelBackdrop: false,
+                      color: '#0f172a',
+                      font: { size: 14, weight: 'bold' },
+                      z: 10,
+                      callback: (value) => Math.round(Number(value)).toString(),
+                    },
+                  },
+                },
               }}
             />
           </div>
