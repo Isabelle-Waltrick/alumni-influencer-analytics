@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Bar, Doughnut, Line, Pie, Radar } from 'react-chartjs-2'
 import { FiltersBar } from '../components/FiltersBar'
 import { useAnalytics } from '../hooks/useAnalytics'
@@ -7,12 +7,90 @@ import type { Filters } from '../types'
 
 type Props = { apiKey: string; onErrorToast: (message: string) => void }
 
+type ChartDefinition = {
+  id: string
+  title: string
+  description: ReactNode
+  renderChart: (expanded: boolean) => ReactNode
+}
+
+type ChartCardProps = {
+  chart: ChartDefinition
+  onExpand: (id: string) => void
+}
+
+const chartViewportClass = 'h-64 sm:h-72 lg:h-80'
+const expandedChartViewportClass = 'h-[26rem] min-w-[42rem] sm:h-[30rem]'
+
+const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
+  <article className="rounded-lg border bg-white p-4">
+    <div className="mb-3 flex items-start justify-between gap-3">
+      <div>
+        <h3 className="mb-1 text-sm font-semibold">{chart.title}</h3>
+        <div className="text-xs text-slate-500">{chart.description}</div>
+      </div>
+      {/* Each chart can open in a wider viewport so mobile users can inspect dense legends and labels. */}
+      <button
+        type="button"
+        className="shrink-0 rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
+        onClick={() => onExpand(chart.id)}
+      >
+        Expand
+      </button>
+    </div>
+    {/* Fixed-height containers give Chart.js enough room to render axes and legends on small screens. */}
+    <div className={chartViewportClass}>{chart.renderChart(false)}</div>
+  </article>
+)
+
 export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const [filters, setFilters] = useState<Filters>({ ...emptyFilters })
+  const [expandedChartId, setExpandedChartId] = useState<string | null>(null)
+  const [isCompactCharts, setIsCompactCharts] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return window.innerWidth < 768
+  })
   const { charts, loading, error, fetchAll } = useAnalytics(apiKey, filters, onErrorToast)
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)')
+
+    // Keep chart legends and axis density in sync with the current screen width.
+    const syncCompactCharts = (matchesCompact: boolean) => {
+      setIsCompactCharts(matchesCompact)
+    }
+
+    syncCompactCharts(mediaQuery.matches)
+
+    const handleChange = (event: MediaQueryListEvent) => {
+      syncCompactCharts(event.matches)
+    }
+
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [])
+
+  useEffect(() => {
+    if (!expandedChartId) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setExpandedChartId(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [expandedChartId])
+
   // Color-codes a Skills Gap bar by its percentage value:
-  // Critical (>70%) → red, Significant (>50%) → orange, Emerging (>20%) → yellow, Monitor → gray.
+  // Critical (>70%) -> red, Significant (>50%) -> orange, Emerging (>20%) -> yellow, Monitor -> gray.
   const skillGapColor = (value: number) => {
     if (value >= 70) return '#EF4444'
     if (value >= 50) return '#F97316'
@@ -81,6 +159,311 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     return ((value / total) * 100).toFixed(1)
   }
 
+  const sharedTickFontSize = isCompactCharts ? 10 : 12
+  const compactLegendPosition = 'bottom' as const
+  const wideLegendPosition = 'right' as const
+
+  const chartDefinitions: ChartDefinition[] = charts ? [
+    {
+      id: 'skills-gap',
+      title: 'Skills Gap Analysis (Bar)',
+      description: (
+        <>
+          Percentage of alumni holding each certification, calculated across all alumni records in the database up to the current date.
+          Bars are colour-coded by gap severity:&nbsp;
+          <span className="font-medium text-red-500">■ Critical (≥ 70%)</span>,&nbsp;
+          <span className="font-medium text-orange-500">■ Significant (≥ 50%)</span>,&nbsp;
+          <span className="font-medium text-yellow-500">■ Emerging (≥ 20%)</span>,&nbsp;
+          <span className="font-medium text-slate-500">■ Monitor (&lt; 20%)</span>.
+          Higher values indicate a widely-held certification; lower values highlight areas where the cohort may be under-qualified.
+        </>
+      ),
+      renderChart: (expanded) => (
+        <Bar
+          data={{
+            labels: charts.skillsGap.map((x) => x.label),
+            datasets: [{
+              label: '% Alumni',
+              data: charts.skillsGap.map((x) => x.percentage),
+              backgroundColor: charts.skillsGap.map((x) => skillGapColor(x.percentage)),
+              borderWidth: 0,
+            }],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const value = context.parsed.y ?? 0
+                    const label = value >= 70 ? 'CRITICAL GAP' : value >= 50 ? 'SIGNIFICANT GAP' : value >= 20 ? 'EMERGING GAP' : 'MONITOR'
+                    return `${value}% of alumni (${label})`
+                  },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: { font: { size: expanded ? 12 : sharedTickFontSize } },
+                title: { display: true, text: 'Percentage of Alumni (%)' },
+              },
+              x: {
+                ticks: {
+                  font: { size: expanded ? 12 : sharedTickFontSize },
+                  maxRotation: isCompactCharts && !expanded ? 18 : 0,
+                  minRotation: isCompactCharts && !expanded ? 18 : 0,
+                },
+                title: { display: true, text: 'Certification' },
+              },
+            },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'certification-trend',
+      title: 'Certification Trend (Line)',
+      description: 'How certification uptake has changed year-on-year across the cohort. Each line represents one certification; values show the percentage of alumni who held it in a given graduation year.',
+      renderChart: (expanded) => (
+        <Line
+          id="trendsChart"
+          data={{ labels: trendYearLabels, datasets: certificationTrendDatasets }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top' as const,
+                labels: {
+                  boxWidth: expanded ? 32 : (isCompactCharts ? 18 : 36),
+                  font: { size: expanded ? 12 : sharedTickFontSize },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.dataset.label || ''
+                    const value = context.parsed.y ?? 0
+                    return usePercentages ? `${label}: ${value}%` : `${label}: ${value}`
+                  },
+                  footer: () => usePercentages
+                    ? 'Based on alumni graduating in that year.'
+                    : 'Absolute count of certifications earned.',
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { font: { size: expanded ? 12 : sharedTickFontSize } },
+                title: {
+                  display: true,
+                  text: usePercentages
+                    ? 'Percentage of Alumni with Certification (%)'
+                    : 'Number of Certifications Earned',
+                },
+              },
+              x: {
+                ticks: { font: { size: expanded ? 12 : sharedTickFontSize } },
+                title: { display: true, text: 'Year' },
+              },
+            },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'industry-sector',
+      title: 'Employment by Industry Sector (Pie)',
+      description: 'Breakdown of the industries alumni are currently working in, based on their most recent employment record.',
+      renderChart: (expanded) => (
+        <Pie
+          data={{
+            labels: charts.employmentByIndustry.map((x) => x.label),
+            datasets: [{
+              label: 'Alumni Count',
+              data: charts.employmentByIndustry.map((x) => x.value),
+              backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'],
+              borderWidth: 3,
+              borderColor: '#fff',
+            }],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: expanded ? wideLegendPosition : (isCompactCharts ? compactLegendPosition : wideLegendPosition),
+                labels: {
+                  boxWidth: expanded ? 18 : (isCompactCharts ? 14 : 18),
+                  font: { size: expanded ? 12 : sharedTickFontSize },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label || ''
+                    const value = Number(context.parsed) || 0
+                    return `${label}: ${value} alumni (${formatShare(value, employmentIndustryTotal)}%)`
+                  },
+                  footer: () => employmentIndustryTotal > 0 ? `Based on ${employmentIndustryTotal} alumni with an industry record.` : 'No industry data available.',
+                },
+              },
+            },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'job-titles',
+      title: 'Most Common Job Titles (Doughnut)',
+      description: 'The most frequently appearing job titles across all alumni employment records, showing which roles the cohort gravitates towards.',
+      renderChart: (expanded) => (
+        <Doughnut
+          data={{
+            labels: charts.commonJobTitles.map((x) => x.label),
+            datasets: [{
+              data: charts.commonJobTitles.map((x) => x.value),
+              backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'],
+              borderWidth: 3,
+              borderColor: '#fff',
+            }],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: expanded ? wideLegendPosition : (isCompactCharts ? compactLegendPosition : wideLegendPosition),
+                labels: {
+                  boxWidth: expanded ? 18 : (isCompactCharts ? 14 : 18),
+                  font: { size: expanded ? 12 : sharedTickFontSize },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label || ''
+                    const value = Number(context.parsed) || 0
+                    return `${label}: ${value} alumni (${formatShare(value, commonJobTitlesTotal)}%)`
+                  },
+                  footer: () => commonJobTitlesTotal > 0 ? `Based on ${commonJobTitlesTotal} tracked job-title records.` : 'No job-title data available.',
+                },
+              },
+            },
+          }}
+        />
+      ),
+    },
+    {
+      id: 'top-employers',
+      title: 'Top Employers (Horizontal Bar)',
+      description: 'Companies that appear most frequently across alumni employment records, indicating the organisations where graduates are most likely to be hired.',
+      renderChart: (expanded) => (
+        <Bar
+          options={{
+            indexAxis: 'y' as const,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label || ''
+                    const value = Number(context.parsed.x) || 0
+                    return `${label}: ${value} alumni (${formatShare(value, topEmployersTotal)}%)`
+                  },
+                  footer: () => topEmployersTotal > 0 ? `Based on ${topEmployersTotal} tracked employer records.` : 'No employer data available.',
+                },
+              },
+            },
+            scales: {
+              x: { ticks: { font: { size: expanded ? 12 : sharedTickFontSize } } },
+              y: { ticks: { font: { size: expanded ? 12 : sharedTickFontSize } } },
+            },
+          }}
+          data={{
+            labels: charts.topEmployers.map((x) => x.label),
+            datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }],
+          }}
+        />
+      ),
+    },
+    {
+      id: 'geographic-distribution',
+      title: 'Geographic Distribution',
+      description: 'Where alumni are currently working by region, based on the country or location listed in their most recent employment record.',
+      renderChart: (expanded) => (
+        <Radar
+          data={{
+            labels: charts.geographicDistribution.map((x) => x.label),
+            datasets: [{
+              label: 'Number of Alumni',
+              data: geographicValues,
+              backgroundColor: 'rgba(59, 130, 246, 0.2)',
+              borderColor: '#3B82F6',
+              borderWidth: 2,
+              pointBackgroundColor: '#3B82F6',
+              pointBorderColor: '#fff',
+              pointRadius: 3,
+              pointHoverRadius: 4,
+            }],
+          }}
+          options={{
+            responsive: true,
+            maintainAspectRatio: false,
+            layout: { padding: { top: expanded ? 72 : (isCompactCharts ? 56 : 92) } },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: (context) => {
+                    const label = context.label || ''
+                    const value = Number(context.parsed.r) || 0
+                    return `${label}: ${value} alumni (${formatShare(value, geographicDistributionTotal)}%)`
+                  },
+                  footer: () => geographicDistributionTotal > 0
+                    ? `Based on ${geographicDistributionTotal} alumni with a geographic record.`
+                    : 'No geographic data available.',
+                },
+              },
+            },
+            scales: {
+              r: {
+                beginAtZero: true,
+                min: 0,
+                max: maxGeographicAlumni,
+                angleLines: { display: true },
+                grid: { display: true, circular: false },
+                pointLabels: {
+                  padding: expanded ? 24 : (isCompactCharts ? 18 : 32),
+                  font: { size: expanded ? 12 : (isCompactCharts ? 10 : 12) },
+                },
+                ticks: {
+                  display: true,
+                  stepSize: geographicStepSize,
+                  padding: expanded ? 8 : (isCompactCharts ? 6 : 12),
+                  showLabelBackdrop: false,
+                  color: '#0f172a',
+                  font: { size: expanded ? 12 : (isCompactCharts ? 10 : 14), weight: 'bold' },
+                  z: 10,
+                  callback: (value) => Math.round(Number(value)).toString(),
+                },
+              },
+            },
+          }}
+        />
+      ),
+    },
+  ] : []
+
+  const expandedChart = chartDefinitions.find((chart) => chart.id === expandedChartId) || null
+
   // Composes every <canvas> inside #charts-grid onto one image. Avoids html2canvas
   // because Tailwind v4 emits oklch() colors that html2canvas 1.x can't parse.
   const downloadChartImage = () => {
@@ -88,7 +471,7 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     if (!grid) return
     const canvases = Array.from(grid.querySelectorAll('canvas')) as HTMLCanvasElement[]
     if (canvases.length === 0) {
-      onErrorToast('Click "Apply Filters" first — there is nothing to capture.')
+      onErrorToast('Click "Apply Filters" first - there is nothing to capture.')
       return
     }
 
@@ -96,8 +479,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     const cols = window.innerWidth >= 1280 ? 2 : 1
     const pad = 24
     const titleH = 28
-    const cellW = Math.max(...canvases.map((c) => c.width))
-    const cellH = Math.max(...canvases.map((c) => c.height)) + titleH
+    const cellW = Math.max(...canvases.map((canvas) => canvas.width))
+    const cellH = Math.max(...canvases.map((canvas) => canvas.height)) + titleH
     const rows = Math.ceil(canvases.length / cols)
 
     const master = document.createElement('canvas')
@@ -114,14 +497,14 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     ctx.fillStyle = '#0f172a'
     ctx.font = '600 16px system-ui, sans-serif'
 
-    canvases.forEach((c, i) => {
-      const col = i % cols
-      const row = Math.floor(i / cols)
+    canvases.forEach((canvas, index) => {
+      const col = index % cols
+      const row = Math.floor(index / cols)
       const x = pad + col * (cellW + pad)
       const y = pad + row * (cellH + pad)
-      const title = (c.closest('.rounded-lg')?.querySelector('h3')?.textContent || '').trim()
+      const title = (canvas.closest('.rounded-lg')?.querySelector('h3')?.textContent || '').trim()
       if (title) ctx.fillText(title, x, y + 18)
-      ctx.drawImage(c, x, y + titleH)
+      ctx.drawImage(canvas, x, y + titleH)
     })
 
     const link = document.createElement('a')
@@ -142,166 +525,38 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       {charts && (
         <div id="charts-grid" className="grid gap-4 xl:grid-cols-2">
           {/* Hold the charts in one column until xl so tablet screens have enough width for legends and axes. */}
-          <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-1 text-sm font-semibold">Skills Gap Analysis (Bar)</h3>
-            <p className="mb-3 text-xs text-slate-500">
-              Percentage of alumni holding each certification, calculated across all alumni records in the database up to the current date.
-              Bars are colour-coded by gap severity:&nbsp;
-              <span className="font-medium text-red-500">■ Critical (≥ 70%)</span>,&nbsp;
-              <span className="font-medium text-orange-500">■ Significant (≥ 50%)</span>,&nbsp;
-              <span className="font-medium text-yellow-500">■ Emerging (≥ 20%)</span>,&nbsp;
-              <span className="font-medium text-slate-500">■ Monitor (&lt; 20%)</span>.
-              Higher values indicate a widely-held certification; lower values highlight areas where the cohort may be under-qualified.
-            </p>
-            <Bar
-              data={{
-                labels: charts.skillsGap.map((x) => x.label),
-                datasets: [{
-                  label: '% Alumni',
-                  data: charts.skillsGap.map((x) => x.percentage),
-                  backgroundColor: charts.skillsGap.map((x) => skillGapColor(x.percentage)),
-                  borderWidth: 0,
-                }],
-              }}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const v = context.parsed.y ?? 0
-                        const label = v >= 70 ? 'CRITICAL GAP' : v >= 50 ? 'SIGNIFICANT GAP' : v >= 20 ? 'EMERGING GAP' : 'MONITOR'
-                        return `${v}% of alumni (${label})`
-                      },
-                    },
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: { display: true, text: 'Percentage of Alumni (%)' },
-                  },
-                  x: {
-                    title: { display: true, text: 'Certification' },
-                  },
-                },
-              }}
-            />
-          </div>
-          <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-1 text-sm font-semibold">Certification Trend (Line)</h3>
-            <p className="mb-3 text-xs text-slate-500">How certification uptake has changed year-on-year across the cohort. Each line represents one certification; values show the percentage of alumni who held it in a given graduation year.</p>
-            <Line
-              id="trendsChart"
-              data={{ labels: trendYearLabels, datasets: certificationTrendDatasets }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                  legend: { position: 'top' as const },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const label = context.dataset.label || ''
-                        const value = context.parsed.y ?? 0
-                        return usePercentages
-                          ? `${label}: ${value}%`
-                          : `${label}: ${value}`
-                      },
-                      footer: () => usePercentages
-                        ? `Based on alumni graduating in that year.`
-                        : `Absolute count of certifications earned.`,
-                    },
-                  },
-                },
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    title: {
-                      display: true,
-                      text: usePercentages
-                        ? 'Percentage of Alumni with Certification (%)'
-                        : 'Number of Certifications Earned',
-                    },
-                  },
-                  x: {
-                    title: {
-                      display: true,
-                      text: 'Year',
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><p className="mb-3 text-xs text-slate-500">Breakdown of the industries alumni are currently working in, based on their most recent employment record.</p><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const }, tooltip: { callbacks: { label: (context) => { const label = context.label || ''; const value = Number(context.parsed) || 0; return `${label}: ${value} alumni (${formatShare(value, employmentIndustryTotal)}%)` }, footer: () => employmentIndustryTotal > 0 ? `Based on ${employmentIndustryTotal} alumni with an industry record.` : 'No industry data available.' } } } }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><p className="mb-3 text-xs text-slate-500">The most frequently appearing job titles across all alumni employment records, showing which roles the cohort gravitates towards.</p><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const }, tooltip: { callbacks: { label: (context) => { const label = context.label || ''; const value = Number(context.parsed) || 0; return `${label}: ${value} alumni (${formatShare(value, commonJobTitlesTotal)}%)` }, footer: () => commonJobTitlesTotal > 0 ? `Based on ${commonJobTitlesTotal} tracked job-title records.` : 'No job-title data available.' } } } }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><p className="mb-3 text-xs text-slate-500">Companies that appear most frequently across alumni employment records, indicating the organisations where graduates are most likely to be hired.</p><Bar options={{ indexAxis: 'y' as const, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => { const label = context.label || ''; const value = Number(context.parsed.x) || 0; return `${label}: ${value} alumni (${formatShare(value, topEmployersTotal)}%)` }, footer: () => topEmployersTotal > 0 ? `Based on ${topEmployersTotal} tracked employer records.` : 'No employer data available.' } } } }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
-          <div className="rounded-lg border bg-white p-4">
-            <h3 className="mb-1 text-sm font-semibold">Geographic Distribution</h3>
-            <p className="mb-3 text-xs text-slate-500">Where alumni are currently working by region, based on the country or location listed in their most recent employment record.</p>
-            <Radar
-              data={{
-                labels: charts.geographicDistribution.map((x) => x.label),
-                datasets: [{
-                  label: 'Number of Alumni',
-                  data: geographicValues,
-                  backgroundColor: 'rgba(59, 130, 246, 0.2)',
-                  borderColor: '#3B82F6',
-                  borderWidth: 2,
-                  pointBackgroundColor: '#3B82F6',
-                  pointBorderColor: '#fff',
-                  pointRadius: 3,
-                  pointHoverRadius: 4,
-                }],
-              }}
-              options={{
-                responsive: true,
-                layout: { padding: { top: 92 } },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const label = context.label || ''
-                        const value = Number(context.parsed.r) || 0
-                        return `${label}: ${value} alumni (${formatShare(value, geographicDistributionTotal)}%)`
-                      },
-                      footer: () => geographicDistributionTotal > 0
-                        ? `Based on ${geographicDistributionTotal} alumni with a geographic record.`
-                        : 'No geographic data available.',
-                    },
-                  },
-                },
-                scales: {
-                  r: {
-                    beginAtZero: true,
-                    min: 0,
-                    max: maxGeographicAlumni,
-                    angleLines: { display: true },
-                    grid: { display: true, circular: false },
-                    pointLabels: {
-                      padding: 32,
-                    },
-                    ticks: {
-                      display: true,
-                      stepSize: geographicStepSize,
-                      padding: 12,
-                      showLabelBackdrop: false,
-                      color: '#0f172a',
-                      font: { size: 14, weight: 'bold' },
-                      z: 10,
-                      callback: (value) => Math.round(Number(value)).toString(),
-                    },
-                  },
-                },
-              }}
-            />
-          </div>
+          {chartDefinitions.map((chart) => <ChartCard key={chart.id} chart={chart} onExpand={setExpandedChartId} />)}
         </div>
       )}
+      {expandedChart ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-3 sm:p-6">
+          <button
+            type="button"
+            aria-label="Close expanded chart"
+            className="absolute inset-0"
+            onClick={() => setExpandedChartId(null)}
+          />
+          {/* The modal keeps a landscape-sized chart area and allows horizontal scrolling when the phone is too narrow. */}
+          <div className="relative z-10 flex max-h-[90vh] w-full max-w-5xl flex-col rounded-xl bg-white p-4 shadow-2xl">
+            <div className="mb-3 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">{expandedChart.title}</h3>
+                <p className="mt-1 text-xs text-slate-500">Rotate your phone for the widest view, or swipe sideways inside the chart if needed.</p>
+              </div>
+              <button
+                type="button"
+                className="rounded border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setExpandedChartId(null)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="overflow-x-auto overflow-y-hidden">
+              <div className={expandedChartViewportClass}>{expandedChart.renderChart(true)}</div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }
