@@ -89,8 +89,18 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     }
   }, [expandedChartId])
 
-  // Color-codes a Skills Gap bar by its percentage value:
-  // Critical (>70%) -> red, Significant (>50%) -> orange, Emerging (>20%) -> yellow, Monitor -> gray.
+  /**
+   * Maps certification percentage to severity color for Skills Gap visualization.
+   * Helps university stakeholders quickly identify critical curriculum gaps (red bars) vs. emerging areas (yellow).
+   * 
+   * @param {number} value - Percentage of alumni with the certification (0-100)
+   * @returns {string} Hex color code: #EF4444 (≥70% critical), #F97316 (≥50% significant),
+   *                   #EAB308 (≥20% emerging), #6B7280 (<20% monitor)
+   * 
+   * @example
+   * skillGapColor(75) // returns '#EF4444' (red) → "Critical gap, add to curriculum"
+   * skillGapColor(15) // returns '#6B7280' (gray) → "Monitor but not urgent"
+   */
   const skillGapColor = (value: number) => {
     if (value >= 70) return '#EF4444'
     if (value >= 50) return '#F97316'
@@ -464,8 +474,19 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
 
   const expandedChart = chartDefinitions.find((chart) => chart.id === expandedChartId) || null
 
-  // Composes every <canvas> inside #charts-grid onto one image. Avoids html2canvas
-  // because Tailwind v4 emits oklch() colors that html2canvas 1.x can't parse.
+  /**
+   * Exports all rendered charts to a single PNG image without external CSS parsing.
+   * 
+   * Why manual canvas composition instead of html2canvas?
+   * - Tailwind CSS v4 emits modern oklch() color functions
+   * - html2canvas 1.x cannot parse oklch(); it fails silently in async pipeline
+   * - Solution: Each Chart.js instance is already a <canvas> element
+   * - We iterate <canvas> elements directly and drawImage() them onto a master canvas
+   * - Result: High-fidelity export with zero CSS interpretation overhead
+   * 
+   * Grid layout preserved: charts exported in 2-column layout (on desktop) or 1-column (mobile)
+   * Titles rendered above each chart on the master canvas.
+   */
   const downloadChartImage = () => {
     const grid = document.getElementById('charts-grid')
     if (!grid) return

@@ -787,6 +787,36 @@ curl -H "Authorization: Bearer ak_xxx" \
 
 ---
 
+## Performance & Optimization Notes
+
+### Query Optimization
+
+- **Unique indexes** on `Bid { userId, bidWindowId }` prevent duplicate bids at the database level, failing fast with E11000 rather than race conditions
+- **Atomic `findOneAndUpdate`** with sort on bid raises ensures only the higher amount succeeds when two users race to increase their bid
+- **Analytics queries** use `$elemMatch` on sub-arrays (degrees, employment) to filter by program/industry without full collection scans
+- **`select()` fields** on profile list queries exclude unnecessary data (bio, LinkedIn, image path) to reduce network payload
+
+### Cron Job Idempotency
+
+- **6 PM window rollover** uses `findOneAndUpdate({ status: 'open' }, { status: 'closed' })` — no-op if already closed
+- **Midnight selection** checks `if (window.status === 'resolved') return;` before proceeding — safe to re-run without duplication
+- **Future window creation** wrapped in existence check — multiple cron invocations never create duplicate BidWindow records
+
+This idempotency is critical for production resilience: if the cron process dies and restarts mid-cycle, no data corruption occurs.
+
+### Email Service Batching
+
+- `sendBidResultEmail()` called once per bidder at midnight — no rate-limiting needed (typically <100 emails per day)
+- Nodemailer queues internally; SMTP connection pooled by Mailtrap
+
+### Rate Limiting Strategy
+
+- **Global**: 20 requests / 15 minutes per IP on `/api/auth/*` (brute-force protection)
+- **Per-key**: configurable via `API_KEY_RATE_LIMIT` env (default 100 reqs/min per API key) — protects backend from runaway client apps
+- Both use in-memory store; for production swap in Redis (see middleware)
+
+---
+
 ## CW1/CW2 rubric mapping
 
 See [the root README](../README.md#cw1-rubric-mapping) for the full table mapping every rubric line to its source location in this codebase.

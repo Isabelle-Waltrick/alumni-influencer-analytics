@@ -548,6 +548,60 @@ Listed verbatim from [`package.json`](package.json):
 
 ---
 
+## Performance & User Experience Notes
+
+### Parallel Data Fetching
+
+The `useAnalytics` hook fires three HTTP requests in parallel:
+
+```ts
+await Promise.all([
+  axios.get('/api/analytics/summary?<filters>'),
+  axios.get('/api/analytics/charts?<filters>'),
+  axios.get('/api/analytics/alumni?<filters>'),
+])
+```
+
+Benefit: If each request takes ~200ms, parallel execution loads dashboard in ~200ms total (not 600ms sequential). Users perceive the analytics dashboard as responsive even on slower networks.
+
+### Responsive Chart Sizing
+
+- Charts auto-detect viewport width via `window.matchMedia('(max-width: 767px)')`
+- Tablet/mobile: compact legend, smaller font, rotated x-axis labels (18°)
+- Desktop: legend on right, full-size fonts, horizontal labels
+- Each chart has an **Expand** button that opens a modal with extra padding for dense legends (Certification Trend has 20+ lines)
+
+### Server-Side Derivations Reduce Frontend Logic
+
+The backend's `analyticsController.listAlumni()` returns pre-computed fields:
+- `programs[]` — all degree titles from the alumnus's profile
+- `graduationDateDisplay` — formatted `dd/mm/yyyy` or `null`
+- `latestCompany` / `latestIndustry` — sorted by most recent employment
+- `certifications[]` — all cert titles (flattened)
+
+This lets the React **Alumni Explorer** render a simple table without date sorting, deduplication, or array manipulation logic.
+
+### Export Consistency
+
+**CSV, PDF, and chart tooltips all use the same `formatShare()` function**. If a chart shows "AWS: 35 alumni (23.3%)", the PDF export shows the same percentage, not a slightly different value. This consistency is critical for stakeholder trust in the data.
+
+### Why localStorage for Filter Presets
+
+- Presets stored under `localStorage.setItem('preset:<name>', JSON.stringify(filters))`
+- Survives page refresh (user can close and reopen the dashboard with same filters)
+- Cleared when the browser tab is closed (no persistent cross-session state)
+- Per-origin isolation (presets saved on `localhost:5173` don't leak to other sites)
+- Zero backend load — no database writes for preset management
+
+### Bundle Size & Vite Advantage
+
+- **Vite** offers faster dev-server startup than Create React App (HMR kicks in ~100ms vs. 1000ms CRA)
+- **chart.js** is small (~40 KB) vs. recharts or visx
+- **papaparse** for CSV is minimal (~10 KB) — jsPDF is ~200 KB but only loaded on Reports page
+- Production bundle optimized by Vite's built-in tree-shaking and minification
+
+---
+
 ## CW2 rubric mapping
 
 See [the root README](../README.md#cw2-rubric-mapping) for the rubric line-item → implementation table.

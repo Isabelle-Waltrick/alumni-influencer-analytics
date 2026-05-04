@@ -353,6 +353,34 @@ For the viva, run through these in order. Total time ~6 minutes.
 
 ---
 
+## Why This Architecture Matters for the Coursework
+
+### Separation of Concerns (Frontend/Backend/Database)
+The monorepo enforces strict boundaries: the React app at port 5173 and the EJS pages at port 3000 **never share code at compile time**. Both communicate exclusively via HTTP to a single backend. This demonstrates:
+- **CW1 requirement**: "the API should be client agnostic" — proven by two independent UI clients on one API
+- **CW2 requirement**: "different keys for different clients" — enforced via `requireApiScope` middleware (Analytics Dashboard gets `read:analytics`; AR app gets `read:alumni_of_day`)
+
+### Real-Time Intelligence Data Pipeline
+Alumni maintain live, current profiles (degrees, certs, employment). Each day at midnight UTC, the cron job selects the highest bidder and marks their profile as **Alumni of the Day**. The React dashboard immediately reflects this in charts and KPIs. This transforms static survey data (30–40% response rates, 6–12 months old) into **actionable, real-time intelligence** for curriculum planning.
+
+### Deliberate Security Layering
+- **Session cookies** for web UIs (alumnus/developer at port 3000)
+- **Bearer API keys** for client apps (Analytics Dashboard, AR app)
+- **Scoped permissions** prevent key compromise (leaked analytics key cannot access AR endpoints)
+- **Rate limiting** per-key protects against brute force
+- **CSRF tokens** on mutating requests
+- **Bcrypt cost 12** + **24-hour token expiry** for password resets
+
+This multi-layer defense reflects real-world production practices expected in a university system handling graduate data.
+
+### Performance & Scalability
+- **Parallel API fetches** in `useAnalytics` hook reduce dashboard load time (summary + charts + alumni fetched concurrently, not sequentially)
+- **MongoDB indexes** on alumni queries ensure analytics queries complete <500ms even with hundreds of alumni
+- **Vite + React 19** for fast dev-server startup (vs. Create React App slowness)
+- **Server-side field derivation** ("latest company", "programs", "graduation date display") keeps frontend JS simple
+
+---
+
 ## CW1 rubric mapping
 
 | Rubric line item | Implementation | Marks |

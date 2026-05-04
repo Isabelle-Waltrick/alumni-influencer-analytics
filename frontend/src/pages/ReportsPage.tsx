@@ -21,7 +21,18 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const geographicDistributionTotal = charts?.geographicDistribution.reduce((sum, item) => sum + item.value, 0) || 0
   const certificationTrendTotal = charts?.certificationTrend?.reduce((sum, item) => sum + item.value, 0) || 0
 
-  // Keeps percentage formatting consistent across CSV, PDF, and chart hover text.
+  /**
+   * Formats a data point as a percentage string, maintaining consistency across all exports.
+   * Used in CSV, PDF, and chart tooltips so exported reports match on-screen visualizations.
+   * 
+   * @param {number} value - Count of items (e.g., 35 alumni with certification)
+   * @param {number} total - Total population (e.g., 150 alumni overall)
+   * @returns {string} Percentage with one decimal (e.g., "23.3")
+   * 
+   * @example
+   * formatShare(35, 150)  // returns "23.3" → rendered as "23.3%" in CSV/PDF
+   * formatShare(0, 100)   // returns "0.0" (prevents division-by-zero issues)
+   */
   const formatShare = (value: number, total: number) => {
     if (total <= 0) return '0.0'
     return ((value / total) * 100).toFixed(1)
