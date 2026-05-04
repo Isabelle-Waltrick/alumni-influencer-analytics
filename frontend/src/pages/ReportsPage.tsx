@@ -56,15 +56,12 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const exportCsv = () => {
     const csv = Papa.unparse(
       alumni.map((a) => ({
-        firstName: a.firstName,
-        lastName: a.lastName,
-        linkedInUrl: a.linkedInUrl,
-        latestJobTitle: a.latestJobTitle,
-        latestCompany: a.latestCompany,
-        topCertification: a.topCertification,
-        certificationsCount: a.certificationsCount,
-        coursesCount: a.coursesCount,
-        degreesCount: a.degreesCount,
+        Name: `${a.firstName} ${a.lastName}`.trim(),
+        Program: a.programs.join(' | ') || '-',
+        'Graduation Date': a.graduationDateDisplay || '-',
+        'Latest Company': a.latestCompany || '-',
+        Certifications: a.certifications.join(' | ') || '-',
+        Industry: a.latestIndustry || '-',
       }))
     )
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -137,11 +134,11 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       sectionHeader('Alumni')
       doc.setFont('helvetica', 'bold')
       const cols = [
-        { label: 'Name', x: 14, width: 30 },
-        { label: 'Latest role', x: 60, width: 28 },
-        { label: 'Company', x: 100, width: 22 },
-        { label: 'Top cert', x: 138, width: 28 },
-        { label: 'C/Co/D', x: 184, width: 12 },
+        { label: 'Name', x: 14, width: 34 },
+        { label: 'Program', x: 52, width: 38 },
+        { label: 'Graduation Date', x: 94, width: 30 },
+        { label: 'Company', x: 128, width: 28 },
+        { label: 'Industry', x: 160, width: 36 },
       ]
       cols.forEach((c) => doc.text(c.label, c.x, y))
       y += 1
@@ -150,21 +147,29 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       y += 4
       doc.setFont('helvetica', 'normal')
 
+      // mm-per-line at 9pt (~3.175 mm per point, 9pt ≈ 4.5 mm)
+      const lineH = 4.5
       for (const a of alumni) {
-        newPageIfNeeded()
-        doc.text(truncate(`${a.firstName ?? ''} ${a.lastName ?? ''}`.trim() || '-', cols[0].width), cols[0].x, y)
-        doc.text(truncate(a.latestJobTitle || '-', cols[1].width), cols[1].x, y)
-        doc.text(truncate(a.latestCompany || '-', cols[2].width), cols[2].x, y)
-        doc.text(truncate(a.topCertification || '-', cols[3].width), cols[3].x, y)
-        doc.text(`${a.certificationsCount}/${a.coursesCount}/${a.degreesCount}`, cols[4].x, y)
-        y += 5
+        // Wrap each cell to its column width and measure how many lines it needs
+        const cells = [
+          doc.splitTextToSize(`${a.firstName ?? ''} ${a.lastName ?? ''}`.trim() || '-', cols[0].width),
+          doc.splitTextToSize(a.programs.join('\n') || '-', cols[1].width),
+          doc.splitTextToSize(a.graduationDateDisplay || '-', cols[2].width),
+          doc.splitTextToSize(a.latestCompany || '-', cols[3].width),
+          doc.splitTextToSize(a.latestIndustry || '-', cols[4].width),
+        ] as string[][]
+        const textHeight = Math.max(...cells.map((c) => c.length)) * lineH
+        const rowPadding = 3
+        newPageIfNeeded(textHeight + rowPadding)
+        cells.forEach((lines, i) => doc.text(lines, cols[i].x, y))
+        y += textHeight
+        // Divider line drawn after the last line of text, before the next row
+        doc.setLineWidth(0.1)
+        doc.setDrawColor(180)
+        doc.line(14, y + 1, 196, y + 1)
+        doc.setDrawColor(0)
+        y += rowPadding + 1
       }
-      doc.setFontSize(8)
-      doc.setTextColor(100)
-      newPageIfNeeded()
-      doc.text('(C/Co/D = certifications / courses / degrees count per alumnus)', 14, y); y += 4
-      doc.setTextColor(0)
-      doc.setFontSize(9)
     }
 
     if (charts?.skillsGap?.length) {
@@ -213,7 +218,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       <FiltersBar
         filters={filters}
         setFilters={setFilters}
-        actionLabel={loading ? 'Loading…' : 'Load Report Data'}
+        actionLabel={loading ? 'Loading…' : 'Apply Filters'}
         onAction={fetchAll}
         actionDisabled={loading}
       />
@@ -224,7 +229,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
           className="rounded border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:text-slate-400">Export PDF</button>
       </div>
 
-      {/* Status block — gives the user feedback after clicking Load Report Data */}
+      {/* Status block — gives the user feedback after clicking Apply Filters */}
       <div className="rounded-lg border bg-white p-4 text-sm">
         {loading && <p className="text-slate-600">Fetching alumni and chart data…</p>}
         {error && <p className="text-rose-600">{error}</p>}

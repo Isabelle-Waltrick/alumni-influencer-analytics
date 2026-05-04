@@ -13,7 +13,7 @@ export const DashboardPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Dashboard Overview</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Load Summary" onAction={fetchAll} />
+      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
       {loading && <p className="text-sm text-slate-500">Loading...</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}
       {summary && (

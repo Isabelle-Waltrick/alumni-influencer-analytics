@@ -77,7 +77,7 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     if (!grid) return
     const canvases = Array.from(grid.querySelectorAll('canvas')) as HTMLCanvasElement[]
     if (canvases.length === 0) {
-      onErrorToast('Click "Load Charts" first — there is nothing to capture.')
+      onErrorToast('Click "Apply Filters" first — there is nothing to capture.')
       return
     }
 
@@ -121,7 +121,7 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   return (
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Trends, Charts and Graphs</h2>
-      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Load Charts" onAction={fetchAll} />
+      <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
       <div className="flex gap-2">
         <button onClick={downloadChartImage} className="rounded border px-4 py-2 text-sm">Download Chart Image</button>
       </div>
