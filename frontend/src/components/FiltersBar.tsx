@@ -10,8 +10,8 @@ type Props = {
 }
 
 export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, actionDisabled = false }: Props) => (
-  <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-3">
-    <h3 className="text-sm font-semibold text-slate-700 md:col-span-3">Filters</h3>
+  <div className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 lg:grid-cols-3">
+    <h3 className="text-sm font-semibold text-slate-700 lg:col-span-3">Filters</h3>
     <div className="space-y-1">
       <label htmlFor="program-filter" className="text-xs font-medium text-slate-600">Program</label>
       <input
@@ -42,7 +42,8 @@ export const FiltersBar = ({ filters, setFilters, actionLabel, onAction, actionD
         onChange={(e) => setFilters({ ...filters, industrySector: e.target.value })}
       />
     </div>
-    <div className="flex gap-2 md:col-span-3">
+    {/* Keep the action buttons stacked longer so tablets do not squeeze the filter controls. */}
+    <div className="flex flex-col gap-2 sm:flex-row lg:col-span-3">
       <button
         onClick={onAction}
         disabled={actionDisabled}

@@ -92,7 +92,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
       return
     }
 
-    const cols = 2
+    // Match the tablet/desktop grid so exported chart sheets follow the on-screen layout.
+    const cols = window.innerWidth >= 1280 ? 2 : 1
     const pad = 24
     const titleH = 28
     const cellW = Math.max(...canvases.map((c) => c.width))
@@ -133,13 +134,14 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
     <section className="space-y-4">
       <h2 className="text-xl font-semibold">Trends, Charts and Graphs</h2>
       <FiltersBar filters={filters} setFilters={setFilters} actionLabel="Apply Filters" onAction={fetchAll} />
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <button onClick={downloadChartImage} className="rounded border px-4 py-2 text-sm">Download Chart Image</button>
       </div>
       {loading && <p className="text-sm text-slate-500">Loading...</p>}
       {error && <p className="text-sm text-rose-600">{error}</p>}
       {charts && (
-        <div id="charts-grid" className="grid gap-4 md:grid-cols-2">
+        <div id="charts-grid" className="grid gap-4 xl:grid-cols-2">
+          {/* Hold the charts in one column until xl so tablet screens have enough width for legends and axes. */}
           <div className="rounded-lg border bg-white p-4">
             <h3 className="mb-1 text-sm font-semibold">Skills Gap Analysis (Bar)</h3>
             <p className="mb-3 text-xs text-slate-500">
