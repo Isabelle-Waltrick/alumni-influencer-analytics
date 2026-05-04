@@ -19,8 +19,9 @@ type ChartCardProps = {
   onExpand: (id: string) => void
 }
 
-const chartViewportClass = 'h-64 sm:h-72 lg:h-80'
-const expandedChartViewportClass = 'h-[26rem] min-w-[42rem] sm:h-[30rem]'
+// Taller cards on large screens so chart content isn't cramped
+const chartViewportClass = 'h-64 sm:h-72 lg:h-96 xl:h-[28rem]'
+const expandedChartViewportClass = 'h-[30rem] min-w-[48rem] sm:h-[34rem]'
 
 const ChartCard = ({ chart, onExpand }: ChartCardProps) => (
   <article className="rounded-lg border bg-white p-4">
@@ -427,7 +428,9 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
           options={{
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: { top: expanded ? 72 : (isCompactCharts ? 56 : 92) } },
+            // Top padding gives the outermost point labels enough clearance without creating a visible blank gap.
+            // Give labels generous space all around — radar point labels sit outside the polygon boundary
+            layout: { padding: { top: expanded ? 32 : 28, bottom: expanded ? 32 : 28, left: expanded ? 40 : 36, right: expanded ? 40 : 36 } },
             plugins: {
               legend: { display: false },
               tooltip: {
@@ -451,8 +454,9 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
                 angleLines: { display: true },
                 grid: { display: true, circular: false },
                 pointLabels: {
-                  padding: expanded ? 24 : (isCompactCharts ? 18 : 32),
-                  font: { size: expanded ? 12 : (isCompactCharts ? 10 : 12) },
+                  // More padding between the polygon edge and the region name text
+                  padding: expanded ? 16 : (isCompactCharts ? 10 : 14),
+                  font: { size: expanded ? 13 : (isCompactCharts ? 10 : 12) },
                 },
                 ticks: {
                   display: true,
