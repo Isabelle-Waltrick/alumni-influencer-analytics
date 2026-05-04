@@ -72,6 +72,7 @@ const authLimiter = rateLimit({
   message: { message: 'Too many requests, please try again later' },
 });
 
+// CSRF protection middleware, enabled based on environment variable
 const csrfProtection = csrf();
 const csrfEnabled = process.env.ENABLE_CSRF === 'true';
 const csrfIfEnabled = (req, res, next) => {
@@ -88,6 +89,10 @@ app.get('/api/csrf-token', csrfIfEnabled, (req, res) => {
   return res.json({ csrfEnabled: true, csrfToken: req.csrfToken() });
 });
 
+
+// Apply rate limiting to sensitive auth endpoints before mounting the auth router,
+// so brute-force and credential-stuffing attacks are blocked before any handler runs.
+// CSRF protection is applied to all state-changing routes (auth, profile, bids, developer) but intentionally omitted from /api/public and /api/analytics, which use API key auth instead.
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
