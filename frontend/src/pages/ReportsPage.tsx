@@ -17,6 +17,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   // Totals are reused by the on-screen summaries and by exported percentage breakdowns.
   const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
+  const topEmployersTotal = charts?.topEmployers.reduce((sum, item) => sum + item.value, 0) || 0
 
   // Keeps percentage formatting consistent across CSV, PDF, and chart hover text.
   const formatShare = (value: number, total: number) => {
@@ -85,6 +86,16 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         }))
       )
       : ''
+    const topEmployersCsv = charts?.topEmployers?.length
+      ? Papa.unparse(
+        charts.topEmployers.map((item) => ({
+          Employer: item.label,
+          'Alumni Count': item.value,
+          Percentage: `${formatShare(item.value, topEmployersTotal)}%`,
+          Basis: `${topEmployersTotal} tracked employer records`,
+        }))
+      )
+      : ''
     const industriesCsv = charts?.employmentByIndustry?.length
       ? Papa.unparse(
         charts.employmentByIndustry.map((item) => ({
@@ -98,6 +109,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     const csvSections = [
       'Alumni',
       alumniCsv,
+      topEmployersCsv ? `Top Employers\n${topEmployersCsv}` : '',
       jobTitlesCsv ? `Most Common Job Titles\n${jobTitlesCsv}` : '',
       industriesCsv ? `Employment by Industry Sector\n${industriesCsv}` : '',
     ].filter(Boolean)
@@ -216,7 +228,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     }
     if (charts?.topEmployers?.length) {
       sectionHeader('Top Employers')
-      writeList(charts.topEmployers.map((x) => ({ left: x.label, right: `${x.value} alumni` })))
+      writeList(charts.topEmployers.map((x) => ({ left: x.label, right: `${x.value} alumni (${formatShare(x.value, topEmployersTotal)}%)` })))
+      newPageIfNeeded()
+      doc.text(`Based on ${topEmployersTotal} tracked employer records.`, 14, y)
+      y += 5
     }
     if (charts?.commonJobTitles?.length) {
       sectionHeader('Most Common Job Titles')
