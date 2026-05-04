@@ -89,7 +89,7 @@ export const AppShell = ({ children, apiKey, setApiKey, onLogout, user }: Props)
       >
         <div className={sidebarCompact ? 'space-y-3' : undefined}>
           <h1 className={`font-semibold ${sidebarCompact ? 'text-center text-sm' : 'text-lg'}`}>{sidebarCompact ? 'UA' : 'University Analytics'}</h1>
-          {sidebarCompact ? null : <p className="text-xs font-medium text-slate-700">Alumni Bidding</p>}
+          {sidebarCompact ? null : <p className="text-xs font-medium text-slate-700">Alumni Analytics</p>}
           {sidebarCompact ? null : <p className="mt-1 text-xs text-slate-500">Signed in as {user.email}</p>}
         </div>
         <nav className="mt-6 space-y-1">

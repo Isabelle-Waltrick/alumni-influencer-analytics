@@ -59,7 +59,7 @@ export const AuthPage = ({ mode, onLoginSuccess, onErrorToast }: Props) => {
         {mode !== 'forgot' && (
           <input type="password" className="w-full rounded border p-2 text-sm" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         )}
-        <button onClick={submit} className="w-full rounded bg-slate-900 px-3 py-2 text-sm text-white">Submit</button>
+        <button onClick={submit} className="w-full rounded bg-slate-900 px-3 py-2 text-sm text-white">{mode === 'login' ? 'Sign In' : 'Send Reset Link'}</button>
       </div>
       <div className="mt-4 flex gap-3 text-xs text-slate-600">
         {mode !== 'login' && <Link to="/login" className="hover:underline">Go to login</Link>}
