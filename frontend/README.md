@@ -44,7 +44,7 @@ Concretely, it provides:
 3. **Dashboard page** — three KPI cards (Total Alumni / Employment Rate / Avg Certifications) computed live by the backend.
 4. **Alumni Explorer** — a filterable table of alumni with derived program(s), graduation-date display, latest company/industry, and certifications list.
 5. **Charts page** — 6 charts (Bar, Line, Pie, Doughnut, Horizontal Bar, and Radar for geography).
-6. **Reports page** — CSV export, multi-page detailed PDF report, filter presets persisted to `localStorage`, downloadable composite chart image.
+6. **Reports page** — CSV export, multi-page detailed PDF report, filter presets persisted to `localStorage`, downloadable composite chart image, and report sections that include count-plus-percentage breakdowns for job titles and industry.
 7. **Defense-in-depth role guard** — alumni accounts cannot access the dashboard; if their session leaks in (e.g. they were also logged in on the EJS site at port 3000), the React app logs them out at three checkpoints.
 
 ---
@@ -227,7 +227,7 @@ is awaited before login / forgot / reset / logout. When CSRF is off the helper r
 
 ### `/dashboard` — Summary KPIs
 
-- Filters card (Program, Graduation date, Industry sector) with inline "Load Summary" button
+- Filters card (Program, Graduation date, Industry sector) with inline "Apply Filters" button
 - 3 KPI cards: Total Alumni / Employment Rate / Avg Certifications
 - Loading + error states inline
 
@@ -249,7 +249,7 @@ type Summary = { totalAlumniTracked: number; employmentRate: number; avgCertific
 ### `/charts` — Trends, Charts and Graphs
 
 - Filters card
-- Inline "Load Charts" button
+- Inline "Apply Filters" button
 - "Download Chart Image" button → composes all canvases into one PNG ([pages/ChartsPage.tsx — `downloadChartImage`](src/pages/ChartsPage.tsx))
 - 6 chart cards in a 2-column grid, with the geographic radar spanning both columns:
 
@@ -273,7 +273,7 @@ Certification Trend implementation details:
 ### `/reports` — Reports & Exports
 
 - Filters card
-- Inline "Load Report Data" button (text changes to "Loading…")
+- Inline "Apply Filters" button (text changes to "Loading…")
 - **Status panel** that shows: loading state, error, or success with row counts (Alumni rows / Skills-gap items / Top employers)
 - Export CSV (Papa) — disabled until data loaded
 - Export PDF (multi-page jsPDF report — see [Exports](#exports))
@@ -313,11 +313,7 @@ If the API key is empty, sets a friendly error and short-circuits. On error, cal
 
 [components/AppShell.tsx](src/components/AppShell.tsx) sidebar contains a `<textarea>` bound to top-level `apiKey` state. The user pastes their analytics-scoped key once; every page reads it from props.
 
-The key is **never persisted** by the React app — it lives only in component state and disappears on tab close. This is intentional:
-
-- Demoable: paste → use → close → gone. No `localStorage` token to demo "leak".
-- Safer than localStorage if the user uses a shared computer.
-- For long-running ergonomics in production, swap to `localStorage` or `sessionStorage` (5-line change).
+The key is persisted in `sessionStorage`, so it survives page navigation and refreshes inside the same browser tab but is cleared when the tab is closed. This keeps the auto-loading dashboard flow working without storing the key long-term.
 
 The textarea's placeholder reads: *"Paste key with read:analytics scope"* — this is intentional UX nudge.
 
@@ -366,7 +362,7 @@ skillGapColor(value: number):
 
 The same thresholds are applied in the backend (`analyticsController.js`) when computing the `severity` field, and in the frontend tooltip callback. The backend calculates percentage as `Math.round((certCount / totalAlumni) * 100)`.
 
-Tooltips, legends, hover behaviour are Chart.js defaults — no custom plugin code needed.
+The bar, line, pie, and doughnut charts use custom tooltip callbacks where needed so hover text can show counts, percentages, severity labels, and the basis for each percentage.
 
 ### Why Geographic Distribution spans both columns
 
@@ -378,14 +374,13 @@ The geographic radar chart has noticeably larger label and ring footprint than t
 
 ### CSV ([pages/ReportsPage.tsx — `exportCsv`](src/pages/ReportsPage.tsx))
 
-```ts
-Papa.unparse(alumni.map(a => ({
-  firstName, lastName, linkedInUrl, latestJobTitle, latestCompany,
-  topCertification, certificationsCount, coursesCount, degreesCount,
-})))
-```
+The CSV export contains:
 
-→ blob → click invisible `<a download>`. Saved as `alumni-report.csv`.
+- an `Alumni` section aligned with the Alumni Explorer columns: Name, Program, Graduation Date, Latest Company, Certifications, Industry
+- a `Most Common Job Titles` section with Alumni Count, Percentage, and Basis
+- an `Employment by Industry Sector` section with Alumni Count, Percentage, and Basis
+
+The CSV string is built with `Papa.unparse(...)`, converted into a blob, and downloaded as `alumni-report.csv`.
 
 ### PDF ([pages/ReportsPage.tsx — `exportPdf`](src/pages/ReportsPage.tsx))
 
@@ -393,11 +388,11 @@ A manually composed multi-page jsPDF report with:
 
 - Title + generation timestamp + active filters
 - Summary KPIs
-- Alumni table (name / latest role / company / top cert / counts) with truncation per column
+- Alumni table (name / program / graduation date / company / industry) with wrapped cells and row dividers for readability
 - Skills Gap (cert title + % + severity)
 - Top Employers (name + count)
-- Most Common Job Titles
-- Employment by Industry Sector
+- Most Common Job Titles with count and percentage share
+- Employment by Industry Sector with count and percentage share
 - Geographic Distribution
 - Certification Trend by Year
 - Page numbers (`Page X of Y`) on every page

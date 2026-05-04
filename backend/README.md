@@ -715,7 +715,7 @@ For development with auto-restart on file change: `npx nodemon server.js`. (node
 3. Click **Analytics Dashboard** preset → form fills in.
 4. Click **Generate key**.
 5. Copy the `ak_...` from the green panel.
-6. Paste into the React sidebar at [http://localhost:5173](http://localhost:5173) → Load Charts.
+6. Paste into the React sidebar at [http://localhost:5173](http://localhost:5173) → Apply Filters.
 
 ### Generate a Mobile AR App key
 

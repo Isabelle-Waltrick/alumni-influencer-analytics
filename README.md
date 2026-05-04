@@ -204,7 +204,7 @@ npm run dev
 2. Log in at [http://localhost:3000/login](http://localhost:3000/login) → fill in profile, sub-arrays, place a bid.
 3. In a *separate* browser (or incognito), register a **developer** account at [http://localhost:3000/register](http://localhost:3000/register); verify; log in.
 4. On `/developer`, click the **Analytics Dashboard** preset → Generate key → copy the `ak_...` value.
-5. Open [http://localhost:5173](http://localhost:5173), log in as the *same* developer, paste the key into the sidebar, click Load Charts.
+5. Open [http://localhost:5173](http://localhost:5173), log in as the *same* developer, paste the key into the sidebar, click Apply Filters.
 
 You're now driving CW1 (port 3000) and CW2 (port 5173) against the same database with proper key segregation.
 
@@ -337,10 +337,10 @@ For the viva, run through these in order. Total time ~6 minutes.
    - `GET http://localhost:3000/api/public/alumni-of-the-day` with AR key → 200 (or 404 if no winner has been resolved yet — see note below)
    - `GET http://localhost:3000/api/analytics/charts` with AR key → **403** (proves segregation)
 8. **Open the React dashboard** at `http://localhost:5173`, log in as the **developer** account, paste the *Analytics Dashboard* key in the sidebar.
-9. **Dashboard page** → Load Summary → 3 KPI cards populate.
-10. **Charts page** → Load Charts → all 6 chart visuals render.
+9. **Dashboard page** → Apply Filters → 3 KPI cards populate.
+10. **Charts page** → Apply Filters → all 6 chart visuals render.
 11. **Charts page** → Download Chart Image → `charts-dashboard.png` is saved.
-12. **Reports page** → Load Report Data → status block shows row counts → Export CSV → Export PDF (multi-page detailed report) → save a Filter Preset.
+12. **Reports page** → Apply Filters → status block shows row counts → Export CSV → Export PDF (multi-page detailed report) → save a Filter Preset.
 13. **Alumni Explorer** → filter by `program = BSc Cyber Security & Forensics` (or set `industrySector = Technology`) → table updates.
 14. **Demonstrate revocation**: on `/developer`, click Revoke on the AR key → repeat the AR-key curl → 401 Invalid or revoked API key.
 15. **Show Swagger** at [http://localhost:3000/api-docs](http://localhost:3000/api-docs) — every endpoint documented with request/response examples.

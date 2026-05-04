@@ -14,6 +14,15 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const [presetMsg, setPresetMsg] = useState('')
   const [savedPresets, setSavedPresets] = useState<string[]>([])
   const { alumni, charts, loading, fetchAll, error } = useAnalytics(apiKey, filters, onErrorToast)
+  // Totals are reused by the on-screen summaries and by exported percentage breakdowns.
+  const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
+  const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
+
+  // Keeps percentage formatting consistent across CSV, PDF, and chart hover text.
+  const formatShare = (value: number, total: number) => {
+    if (total <= 0) return '0.0'
+    return ((value / total) * 100).toFixed(1)
+  }
 
   // Refresh the preset list from localStorage on mount and after every save/delete.
   const refreshPresets = () => {
@@ -54,7 +63,8 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   }
 
   const exportCsv = () => {
-    const csv = Papa.unparse(
+    // The first section mirrors the Alumni Explorer table so spreadsheet exports stay familiar.
+    const alumniCsv = Papa.unparse(
       alumni.map((a) => ({
         Name: `${a.firstName} ${a.lastName}`.trim(),
         Program: a.programs.join(' | ') || '-',
@@ -64,6 +74,34 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         Industry: a.latestIndustry || '-',
       }))
     )
+    // Extra report sections carry the same count + percentage context shown in the charts.
+    const jobTitlesCsv = charts?.commonJobTitles?.length
+      ? Papa.unparse(
+        charts.commonJobTitles.map((item) => ({
+          'Job Title': item.label,
+          'Alumni Count': item.value,
+          Percentage: `${formatShare(item.value, commonJobTitlesTotal)}%`,
+          Basis: `${commonJobTitlesTotal} tracked job-title records`,
+        }))
+      )
+      : ''
+    const industriesCsv = charts?.employmentByIndustry?.length
+      ? Papa.unparse(
+        charts.employmentByIndustry.map((item) => ({
+          Industry: item.label,
+          'Alumni Count': item.value,
+          Percentage: `${formatShare(item.value, employmentIndustryTotal)}%`,
+          Basis: `${employmentIndustryTotal} alumni with an industry record`,
+        }))
+      )
+      : ''
+    const csvSections = [
+      'Alumni',
+      alumniCsv,
+      jobTitlesCsv ? `Most Common Job Titles\n${jobTitlesCsv}` : '',
+      industriesCsv ? `Employment by Industry Sector\n${industriesCsv}` : '',
+    ].filter(Boolean)
+    const csv = csvSections.join('\n\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -182,11 +220,18 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     }
     if (charts?.commonJobTitles?.length) {
       sectionHeader('Most Common Job Titles')
-      writeList(charts.commonJobTitles.map((x) => ({ left: x.label, right: `${x.value} alumni` })))
+      writeList(charts.commonJobTitles.map((x) => ({ left: x.label, right: `${x.value} alumni (${formatShare(x.value, commonJobTitlesTotal)}%)` })))
+      newPageIfNeeded()
+      doc.text(`Based on ${commonJobTitlesTotal} tracked job-title records.`, 14, y)
+      y += 5
     }
     if (charts?.employmentByIndustry?.length) {
       sectionHeader('Employment by Industry Sector')
-      writeList(charts.employmentByIndustry.map((x: { label: string; value: number }) => ({ left: x.label, right: x.value })))
+      // Match the richer hover state by exporting both raw counts and share of the visible total.
+      writeList(charts.employmentByIndustry.map((x: { label: string; value: number }) => ({ left: x.label, right: `${x.value} alumni (${formatShare(x.value, employmentIndustryTotal)}%)` })))
+      newPageIfNeeded()
+      doc.text(`Based on ${employmentIndustryTotal} alumni with an industry record.`, 14, y)
+      y += 5
     }
     if (charts?.geographicDistribution?.length) {
       sectionHeader('Geographic Distribution')

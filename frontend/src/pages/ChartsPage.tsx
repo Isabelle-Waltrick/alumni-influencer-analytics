@@ -69,6 +69,15 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
   const geographicValues = charts?.geographicDistribution.map((x) => x.value) || []
   const maxGeographicAlumni = geographicValues.length ? Math.max(...geographicValues) : 0
   const geographicStepSize = Math.max(1, Math.ceil(maxGeographicAlumni / 3))
+  // Totals power the richer tooltip text for pie/doughnut slices.
+  const employmentIndustryTotal = charts?.employmentByIndustry.reduce((sum, item) => sum + item.value, 0) || 0
+  const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
+
+  // Shared percentage formatter keeps hover labels aligned with report exports.
+  const formatShare = (value: number, total: number) => {
+    if (total <= 0) return '0.0'
+    return ((value / total) * 100).toFixed(1)
+  }
 
   // Composes every <canvas> inside #charts-grid onto one image. Avoids html2canvas
   // because Tailwind v4 emits oklch() colors that html2canvas 1.x can't parse.
@@ -220,8 +229,8 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
               }}
             />
           </div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><p className="mb-3 text-xs text-slate-500">Breakdown of the industries alumni are currently working in, based on their most recent employment record.</p><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
-          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><p className="mb-3 text-xs text-slate-500">The most frequently appearing job titles across all alumni employment records, showing which roles the cohort gravitates towards.</p><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const } } }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Employment by Industry Sector (Pie)</h3><p className="mb-3 text-xs text-slate-500">Breakdown of the industries alumni are currently working in, based on their most recent employment record.</p><Pie data={{ labels: charts.employmentByIndustry.map((x) => x.label), datasets: [{ label: 'Alumni Count', data: charts.employmentByIndustry.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const }, tooltip: { callbacks: { label: (context) => { const label = context.label || ''; const value = Number(context.parsed) || 0; return `${label}: ${value} alumni (${formatShare(value, employmentIndustryTotal)}%)` }, footer: () => employmentIndustryTotal > 0 ? `Based on ${employmentIndustryTotal} alumni with an industry record.` : 'No industry data available.' } } } }} /></div>
+          <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Most Common Job Titles (Doughnut)</h3><p className="mb-3 text-xs text-slate-500">The most frequently appearing job titles across all alumni employment records, showing which roles the cohort gravitates towards.</p><Doughnut data={{ labels: charts.commonJobTitles.map((x) => x.label), datasets: [{ data: charts.commonJobTitles.map((x) => x.value), backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6B7280', '#84CC16'], borderWidth: 3, borderColor: '#fff' }] }} options={{ plugins: { legend: { position: 'right' as const }, tooltip: { callbacks: { label: (context) => { const label = context.label || ''; const value = Number(context.parsed) || 0; return `${label}: ${value} alumni (${formatShare(value, commonJobTitlesTotal)}%)` }, footer: () => commonJobTitlesTotal > 0 ? `Based on ${commonJobTitlesTotal} tracked job-title records.` : 'No job-title data available.' } } } }} /></div>
           <div className="rounded-lg border bg-white p-4"><h3 className="mb-1 text-sm font-semibold">Top Employers (Horizontal Bar)</h3><p className="mb-3 text-xs text-slate-500">Companies that appear most frequently across alumni employment records, indicating the organisations where graduates are most likely to be hired.</p><Bar options={{ indexAxis: 'y' as const }} data={{ labels: charts.topEmployers.map((x) => x.label), datasets: [{ label: 'Alumni', data: charts.topEmployers.map((x) => x.value), backgroundColor: '#3B82F6' }] }} /></div>
           <div className="rounded-lg border bg-white p-4">
             <h3 className="mb-1 text-sm font-semibold">Geographic Distribution</h3>
