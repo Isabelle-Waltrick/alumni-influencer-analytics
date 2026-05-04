@@ -362,7 +362,7 @@ skillGapColor(value: number):
 
 The same thresholds are applied in the backend (`analyticsController.js`) when computing the `severity` field, and in the frontend tooltip callback. The backend calculates percentage as `Math.round((certCount / totalAlumni) * 100)`.
 
-The bar, line, pie, doughnut, and radar charts use custom tooltip callbacks where needed so hover text can show counts, percentages, severity labels, and the basis for each percentage.
+All charts use custom tooltip callbacks where needed so hover text can show counts, percentages, severity labels, and the basis for each percentage. The line chart footer notes whether values are percentages or absolute counts.
 
 ### Why Geographic Distribution spans both columns
 
@@ -377,9 +377,11 @@ The geographic radar chart has noticeably larger label and ring footprint than t
 The CSV export contains:
 
 - an `Alumni` section aligned with the Alumni Explorer columns: Name, Program, Graduation Date, Latest Company, Certifications, Industry
-- a `Geographic Distribution` section with Alumni Count, Percentage, and Basis
+- a `Top Employers` section with Alumni Count, Percentage, and Basis
 - a `Most Common Job Titles` section with Alumni Count, Percentage, and Basis
 - an `Employment by Industry Sector` section with Alumni Count, Percentage, and Basis
+- a `Geographic Distribution` section with Alumni Count, Percentage, and Basis
+- a `Certification Trend by Year and Certification` section with Year, Certification, Count, Percentage (as % of certifications earned that year), and Basis
 
 The CSV string is built with `Papa.unparse(...)`, converted into a blob, and downloaded as `alumni-report.csv`.
 
@@ -395,7 +397,7 @@ A manually composed multi-page jsPDF report with:
 - Most Common Job Titles with count and percentage share
 - Employment by Industry Sector with count and percentage share
 - Geographic Distribution with count and percentage share
-- Certification Trend by Year
+- Certification Trend with year totals and percentage share of that year's certifications
 - Page numbers (`Page X of Y`) on every page
 
 Pagination is automatic — sections page-break cleanly via a `newPageIfNeeded()` helper. Sections with empty data are skipped entirely.

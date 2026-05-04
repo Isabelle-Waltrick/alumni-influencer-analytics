@@ -19,6 +19,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
   const commonJobTitlesTotal = charts?.commonJobTitles.reduce((sum, item) => sum + item.value, 0) || 0
   const topEmployersTotal = charts?.topEmployers.reduce((sum, item) => sum + item.value, 0) || 0
   const geographicDistributionTotal = charts?.geographicDistribution.reduce((sum, item) => sum + item.value, 0) || 0
+  const certificationTrendTotal = charts?.certificationTrend?.reduce((sum, item) => sum + item.value, 0) || 0
 
   // Keeps percentage formatting consistent across CSV, PDF, and chart hover text.
   const formatShare = (value: number, total: number) => {
@@ -117,6 +118,20 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
         }))
       )
       : ''
+    const certificationTrendCsv = charts?.certificationTrendSeries?.length
+      ? Papa.unparse(
+        charts.certificationTrendSeries.map((item) => {
+          const yearTotal = charts.certificationTrend?.find((yt) => yt.year === item.year)?.value || 1
+          return {
+            Year: item.year,
+            Certification: item.certification,
+            Count: item.value,
+            Percentage: `${formatShare(item.value, yearTotal)}%`,
+            Basis: `${yearTotal} certifications earned in ${item.year}`,
+          }
+        })
+      )
+      : ''
     const csvSections = [
       'Alumni',
       alumniCsv,
@@ -124,6 +139,7 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
       jobTitlesCsv ? `Most Common Job Titles\n${jobTitlesCsv}` : '',
       industriesCsv ? `Employment by Industry Sector\n${industriesCsv}` : '',
       geographyCsv ? `Geographic Distribution\n${geographyCsv}` : '',
+      certificationTrendCsv ? `Certification Trend by Year and Certification\n${certificationTrendCsv}` : '',
     ].filter(Boolean)
     const csv = csvSections.join('\n\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -269,7 +285,10 @@ export const ReportsPage = ({ apiKey, onErrorToast }: Props) => {
     }
     if (charts?.certificationTrend?.length) {
       sectionHeader('Certification Trend by Year')
-      writeList(charts.certificationTrend.map((x) => ({ left: x.year, right: `${x.value} certifications` })))
+      writeList(charts.certificationTrend.map((x) => ({ left: x.year, right: `${x.value} certifications (${formatShare(x.value, certificationTrendTotal)}%)` })))
+      newPageIfNeeded()
+      doc.text(`Based on ${certificationTrendTotal} total certifications earned across all years.`, 14, y)
+      y += 5
     }
 
     // Page numbers

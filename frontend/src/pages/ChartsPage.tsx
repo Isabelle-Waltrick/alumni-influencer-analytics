@@ -208,6 +208,9 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
                           ? `${label}: ${value}%`
                           : `${label}: ${value}`
                       },
+                      footer: () => usePercentages
+                        ? `Based on alumni graduating in that year.`
+                        : `Absolute count of certifications earned.`,
                     },
                   },
                 },
