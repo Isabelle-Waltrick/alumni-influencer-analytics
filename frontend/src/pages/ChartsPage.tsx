@@ -172,7 +172,20 @@ export const ChartsPage = ({ apiKey, onErrorToast }: Props) => {
               options={{
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { position: 'top' as const } },
+                plugins: {
+                  legend: { position: 'top' as const },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => {
+                        const label = context.dataset.label || ''
+                        const value = context.parsed.y ?? 0
+                        return usePercentages
+                          ? `${label}: ${value}%`
+                          : `${label}: ${value}`
+                      },
+                    },
+                  },
+                },
                 scales: {
                   y: {
                     beginAtZero: true,
