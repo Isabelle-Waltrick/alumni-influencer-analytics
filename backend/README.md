@@ -2,13 +2,15 @@
 
 Node.js / Express / MongoDB server for **CW1 (Alumni Influencers Web API)** and the API surface that **CW2 (University Analytics Dashboard)** consumes.
 
+CW2 functionality in this project is delivered by extending the CW1 backend: the same server was enhanced with analytics endpoints, per-client API-key scopes, and usage tracking required by the CW2 brief.
+
 The same Node process serves three things:
 
 1. **REST API** under `/api/*` — auth, profile, bidding, developer keys, analytics, public AR endpoint
 2. **EJS web pages** under `/` — alumnus profile + bidding UI, developer key-management UI, public alumni-of-the-day page
 3. **Swagger UI** at `/api-docs` — auto-generated from JSDoc on every route
 
-It is the entire CW1 deliverable plus the data-and-key backbone of CW2.
+It is the entire CW1 deliverable plus the extended data-and-key backbone that enables CW2 compliance.
 
 ---
 
@@ -683,6 +685,8 @@ See the table in [`README.md`](../README.md#environment-variables-backend) at th
 
 ## Setup & run
 
+`npm install` in `backend/` is required before `node server.js`; otherwise dependencies like Express/Mongoose/EJS will be missing.
+
 ```bash
 cd backend
 
@@ -779,7 +783,7 @@ curl -H "Authorization: Bearer ak_xxx" \
 | `MongooseServerSelectionError` | Mongo not running or wrong URI | Start MongoDB; verify `MONGO_URI` |
 | `EBADCSRFTOKEN` | CSRF on but client missed `x-csrf-token` | Verify the client called `GET /api/csrf-token` first; or temporarily set `ENABLE_CSRF=false` |
 | Cron jobs fire at wrong times | Host TZ leaking through | Set `TZ=UTC` in `.env` |
-| Verification email never arrives | Wrong SMTP creds, or sending to a non-existent inbox | Check `EMAIL_*` vars; use Mailtrap sandbox; check Mailtrap inbox not real inbox |
+| Verification email never arrives | Wrong SMTP creds, blocked SMTP, or inbox access unavailable | Check `EMAIL_*` vars; use Mailtrap sandbox; and for local dev fallback manually verify via `http://localhost:3000/api/auth/verify-email/<mongoDB_token>` by copying `verificationToken` from the user document in MongoDB |
 | `403 Insufficient API key scope` | Generated key lacks needed scope | Use the right `/developer` preset, or send `scopes: [...]` explicitly |
 | `409 An account with this email already exists` | The email is already registered | Use a different email, or reset the existing account's password |
 | Bid placement returns 409 with `An active bid already exists` | The unique index caught a duplicate | Cancel the existing bid first, or use `PATCH /api/bids/:id` to increase |

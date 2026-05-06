@@ -7,11 +7,14 @@ A full-stack platform built for two coursework parts:
 
 The repository is a **monorepo** with two independently runnable apps and one shared MongoDB.
 
+CW2 was implemented by **extending CW1**, not replacing it. The CW1 server and data model were expanded with analytics-oriented endpoints, stricter per-client scope segregation, and developer key workflows so the CW2 dashboard could run against the same production-style backend.
+
 ---
 
 ## Table of Contents
 
 - [Repository layout](#repository-layout)
+- [How CW1 was extended for CW2](#how-cw1-was-extended-for-cw2)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Tech stack](#tech-stack)
 - [Quick start (5 minutes)](#quick-start-5-minutes)
@@ -24,7 +27,6 @@ The repository is a **monorepo** with two independently runnable apps and one sh
 - [CW1 rubric mapping](#cw1-rubric-mapping)
 - [CW2 rubric mapping](#cw2-rubric-mapping)
 - [Repo conventions](#repo-conventions)
-- [Known limitations](#known-limitations)
 - [Troubleshooting](#troubleshooting)
 - [Per-app READMEs](#per-app-readmes)
 
@@ -33,7 +35,7 @@ The repository is a **monorepo** with two independently runnable apps and one sh
 ## Repository layout
 
 ```
-Aletia/
+alumni-influencer-analytics/
 ├── README.md                    ← (this file) overview, monorepo glue, demo flow
 ├── CW1_Server_Side.docx         ← original CW1 brief
 ├── CW2.docx                     ← original CW2 brief
@@ -72,6 +74,18 @@ Aletia/
 ```
 
 The two apps **never share code at compile time**. They communicate exclusively over HTTP — the backend is a black box from the frontend's perspective, exactly as CW1 mandates ("*the API should be client agnostic*").
+
+---
+
+## How CW1 was extended for CW2
+
+CW2 compliance is achieved by building directly on top of CW1's backend, not by introducing a separate analytics server.
+
+- **Same authentication core**: session auth, email verification, password reset, CSRF, helmet, and rate limiting remain in CW1 and are reused by CW2.
+- **Extended API surface**: CW1 was expanded with `/api/analytics/*` endpoints designed for dashboard KPIs, chart datasets, and alumni exploration.
+- **Scope-based client segregation**: CW1 API key management was extended so different clients receive different scope sets (for example, Analytics Dashboard vs Mobile AR App), with explicit 403 behavior for insufficient scope.
+- **Shared live data model**: CW2 analytics are computed from the same CW1 profile/bidding collections, so dashboard outputs reflect real platform activity instead of duplicated datasets.
+- **Developer workflow carried forward**: CW1's `/developer` key management UI is the control plane that enables and revokes CW2 dashboard access.
 
 ---
 
@@ -155,18 +169,20 @@ Versions are pinned in [`backend/package.json`](backend/package.json) and [`fron
 
 - Node.js **18+**
 - A running MongoDB (local `mongodb://localhost:27017` or a free MongoDB Atlas cluster)
-- An SMTP account for email (Mailtrap sandbox recommended — free)
+- An SMTP account for email (Mailtrap)
 
 ### 1. Clone and install
 
+You must install Node modules in **both** app folders (`backend` and `frontend`) before running the project. If either `npm install` step is skipped, that app will fail to start.
+
 ```bash
 git clone <this-repo>
-cd Aletia
+cd alumni-influencer-analytics
 
 # backend
 cd backend
 npm install
-cp .env.example .env
+cp .env.example .env   # Windows PowerShell: copy .env.example .env
 # edit .env: at minimum set MONGO_URI, SESSION_SECRET, EMAIL_*
 
 # frontend
@@ -185,6 +201,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Paste it into `backend/.env` as `SESSION_SECRET`. Set `CLIENT_ORIGIN=http://localhost:5173` (Vite dev server) so CORS lets the React app carry cookies.
 
 ### 3. Run both apps
+
+Only run these commands after both install steps above have completed successfully.
 
 In two terminals:
 
@@ -321,14 +339,14 @@ Vite only exposes variables prefixed with `VITE_` to client code (security — a
 For the viva, run through these in order. Total time ~6 minutes.
 
 1. **Start both apps** (`node server.js` + `npm run dev`).
-2. **Register & verify alumnus** at `http://localhost:3000/register` (Account type: Alumnus). Open Mailtrap, click verify link.
+2. **Register & verify alumnus** at `http://localhost:3000/register` (Account type: Alumnus). Open Mailtrap and click the verify link. If email delivery is unavailable in your environment, use the manual verify fallback in Troubleshooting.
 3. **Log in as alumnus**, on `/profile`:
    - Fill personal info + LinkedIn URL
    - Add 2 degrees, 3 certifications (with `issuingBody` and `completionDate` populated), 2 courses (with `provider`), 2 employment rows (with `jobTitle` + `company` + `industry` + `startDate`)
    - Upload a profile image
    - On `/bidding`, place a bid (£50)
 4. **Optional — second alumnus** with overlapping certs (e.g. AWS + Docker) to make charts non-trivial.
-5. **Register & verify developer** account (different email, Account type: Developer).
+5. **Register & verify developer** account (different email, Account type: Developer). If email delivery is unavailable in your environment, use the manual verify fallback in Troubleshooting.
 6. **Log in as developer**, on `/developer`:
    - Click **Analytics Dashboard** preset → Generate key → copy
    - Click **Mobile AR App** preset → Generate key → copy
@@ -422,26 +440,12 @@ This multi-layer defense reflects real-world production practices expected in a 
 
 ## Repo conventions
 
-- **Two `.gitignore`** files (one per app) — `node_modules/`, `.env`, `dist/`, `uploads/` excluded.
-- **No build artifacts committed** — `npm install` in each app re-creates them.
-- **Module systems**: backend is CommonJS (`"type": "commonjs"`), frontend is ES modules (`"type": "module"`).
+- **Two `.gitignore` files in the repo root/frontend split** — ignore rules cover `node_modules/`, `.env`, `dist/`, and runtime uploads.
 - **No shared lockfile**. Each app has its own `package-lock.json`.
-- **Comments are sparse and intentional** — only present where the *why* is non-obvious (cron timezone pinning, unique-index-as-defense, csrf-conditional middleware, etc.).
-- **Code style**: 2-space indent, single quotes in JS/TS, double quotes in JSON. No linter is wired up — keep PRs visually consistent with surrounding code.
-
----
-
-## Known limitations
-
-These are intentional simplifications, called out so they're not surprises in the viva:
-
-1. **University-domain validation is not enforced** ([User.js:11](backend/src/models/User.js)) — comment says "domain validation will be added in a later iteration". CW1 brief mandates this; addressing it would be a one-line regex in the email validator.
-2. **`programme` and `industrySector` root fields** in `Profile` are still not exposed in the EJS personal-info form. Dashboard filters therefore use fields that are captured in existing sub-sections: degree title/completion date (`degrees[]`) and employment industry (`employment[]`).
-3. **`hasEventBonus` is not toggled by any UI** — the field exists for the 4th-bid bonus but no flow flips it. A future admin endpoint or attendance webhook would set it.
-4. **No frontend tests / no backend tests** — this is a coursework prototype. Validation lives in `express-validator` chains and Mongoose schema validation.
-5. **CSP allows `'unsafe-inline'`** ([app.js:30-32](backend/src/app.js)) — required because the EJS pages have inline `<script>` blocks. Tightening would require extracting all page scripts and adding nonces.
-6. **Sessions are in-memory** — they're lost on backend restart. For production swap in `connect-mongo` for session persistence.
-7. **No HTTPS** — assumed handled by a reverse proxy in production. `cookie.secure` flips on automatically when `NODE_ENV=production`.
+- **Module systems**: backend is CommonJS (`"type": "commonjs"`), frontend is ES modules (`"type": "module"`).
+- **No mandatory linter/formatter pipeline** — keep PRs visually consistent with surrounding code.
+- **Comments are pragmatic, not uniform** — backend comments are mostly concise implementation notes, while some frontend files include fuller teaching-style comments.
+- **Code style**: 2-space indent, single quotes in JS/TS, double quotes in JSON.
 
 ---
 
@@ -454,6 +458,7 @@ These are intentional simplifications, called out so they're not surprises in th
 | `EBADCSRFTOKEN` from Swagger | `ENABLE_CSRF=true` and Swagger doesn't fetch the token | Set `ENABLE_CSRF=false` for one-off Swagger calls, then back to `true` |
 | Dashboard logs me out immediately | You logged in with an `alumnus` account; React dashboard refuses alumni | Log in with a `developer` account |
 | Charts page shows empty Pie / Polar | Your alumnus has no `cert.issuingBody`, `course.provider`, or `degree.institution` filled in | Re-add the relevant sub-array entries with all fields populated |
+| Verification email not delivered in dev/test | SMTP is misconfigured, blocked, or mailbox access is unavailable | Manually verify via `http://localhost:3000/api/auth/verify-email/<mongoDB_token>`: in MongoDB, open the user document in `users`, copy `verificationToken`, paste into the URL, then open it in the browser |
 | `/api/public/alumni-of-the-day` returns 404 | No `FeaturedAlumni` record for today (cron hasn't run yet) | Wait for midnight UTC, or run `runMidnightSelection()` manually |
 | Chart Image button does nothing | Old html2canvas couldn't parse Tailwind v4 `oklch()` — should now use canvas composition | Hard reload after pulling the latest code |
 | Report PDF only shows counts | Old export — current build emits a multi-page report with alumni table + every chart's top items | Hard reload |

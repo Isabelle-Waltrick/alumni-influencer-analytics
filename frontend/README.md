@@ -2,6 +2,8 @@
 
 A React + Vite + TypeScript single-page app that consumes the [backend](../backend/README.md) REST API to deliver the **CW2 University Analytics Dashboard**. Built for university-side users (analysts / curriculum planners / administrators) to derive intelligence from live alumni data.
 
+This dashboard assumes CW1 has been extended for CW2 requirements: it relies on the CW1 server's analytics endpoints, scoped API-key model, and shared alumni/profile data pipeline rather than a separate analytics backend.
+
 The app is organized into a conventional React folder structure — `App.tsx` is the slim composition root (routing + global state), with everything else split into `pages/`, `components/`, `hooks/`, `lib/`, and `types/`.
 
 ---
@@ -481,6 +483,8 @@ Vite only exposes `VITE_*` variables to client code. Anything else (DB URLs, ser
 ---
 
 ## Setup, run & build
+
+`npm install` in `frontend/` is required before `npm run dev` or `npm run build`; otherwise Vite/React dependencies are not available.
 
 ### Install
 
